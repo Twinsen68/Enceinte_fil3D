@@ -108,15 +108,15 @@ api:  # Active l’API ESPHome pour la communication avec Home Assistant.
 
 wifi:
   ssid: !secret wifi_ssid  # Nom du réseau Wi-Fi
-  password: !secret wifi_password  # Mot de passe du Wi-Fi```
+  password: !secret wifi_password  # Mot de passe du Wi-Fi
 
 ## 3️⃣ Déploiement dans ESPHome
 
-  1. **Ouvrez ESPHome dans Home Assistant**.
-  2. **Ajoutez un nouvel appareil** et copiez-collez `install.yaml`.
-  3. **Flashez l’ESP32 via USB** pour la première installation.
-  4. **Le module se connectera au Wi-Fi et sera visible dans Home Assistant**.
-  5. **Accédez aux contrôles directement depuis Home Assistant**.
+1. **Ouvrez ESPHome dans Home Assistant**.
+2. **Ajoutez un nouvel appareil** et copiez-collez `install.yaml`.
+3. **Flashez l’ESP32 via USB** pour la première installation.
+4. **Le module se connectera au Wi-Fi et sera visible dans Home Assistant**.
+5. **Accédez aux contrôles directement depuis Home Assistant**.
 
 ---
 
