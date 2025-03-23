@@ -153,7 +153,8 @@ binary_sensor:
     on_press:
       then:
         - number.increment: humidite_cible
-        - display.turn_on: ecran_oled  # Réveille l'écran
+        - lambda: |-
+            id(ecran_oled).update();  # Réveille l’écran en forçant l’actualisation
 
   - platform: gpio
     pin:
@@ -163,7 +164,8 @@ binary_sensor:
     on_press:
       then:
         - number.decrement: humidite_cible
-        - display.turn_on: ecran_oled  # Réveille l'écran
+        - lambda: |-
+            id(ecran_oled).update();  # Réveille l’écran en forçant l’actualisation
 
   - platform: gpio
     pin:
@@ -179,4 +181,5 @@ binary_sensor:
               id(mode_fonctionnement).publish_state("Maintien");
             }
             id(gestion_chauffage).execute();
-        - display.turn_on: ecran_oled  # Réveille l'écran
+        - lambda: |-
+            id(ecran_oled).update();  # Réveille l’écran en forçant l’actualisation
