@@ -97,7 +97,6 @@ script:
           float humidite_actuelle = id(humidity).state;
           float seuil_humidite = id(humidite_cible).state;
           float puissance = 0;
-
           if (id(mode_fonctionnement).state == "Maintien") {
             if (humidite_actuelle > seuil_humidite + 10) {
               puissance = 1.0;
@@ -110,11 +109,15 @@ script:
             }
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
             puissance = 1.0;
-            - delay: !lambda |-
-                return (int)(id(duree_sechage).state * 3600000);
-            id(mode_fonctionnement).publish_state("Maintien");
           }
           id(chauffage_dimmable).turn_on().set_brightness(puissance);
+      - delay: !lambda |-
+          if (id(mode_fonctionnement).state == "Séchage approfondi") {
+            int delay_time = (int)(id(duree_sechage).state * 3600000);
+            id(mode_fonctionnement).publish_state("Maintien");
+            return delay_time;
+          }
+          return 0;
 
 # Affichage OLED SSD1306 avec mode veille
 display:
