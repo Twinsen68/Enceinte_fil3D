@@ -65,67 +65,81 @@ number:
     step: 1
     initial_value: 30
 
+# Sélection de la durée du séchage
+  - platform: template
+    name: "Durée du séchage"
+    id: duree_sechage
+    optimistic: true
+    min_value: 1
+    max_value: 8
+    step: 1
+    unit_of_measurement: "h"
+    initial_value: 4
+
 # Sélection du mode de fonctionnement
 select:
   - platform: template
     name: "Mode de fonctionnement"
     id: mode_fonctionnement
     optimistic: true
-    options: ["Maintien", "Séchage PLA", "Séchage ABS", "Séchage Nylon"]
+    options: ["Maintien", "Séchage approfondi"]
     initial_option: "Maintien"
     on_value:
       - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
       - script.execute: gestion_chauffage
 
-# Automatisation de la gestion du chauffage
+# Automatisation de la gestion du chauffage avec PWM progressif
 script:
   - id: gestion_chauffage
     mode: queued
     then:
       - lambda: |-
-          std::string mode = id(mode_fonctionnement).state;
           float humidite_actuelle = id(humidity).state;
           float seuil_humidite = id(humidite_cible).state;
           float puissance = 0;
 
-          if (mode == "Maintien") {
-            if (humidite_actuelle > seuil_humidite + 5) {
-              puissance = 0.5; // Chauffage à 50%
-            } else if (humidite_actuelle <= seuil_humidite) {
+          if (id(mode_fonctionnement).state == "Maintien") {
+            if (humidite_actuelle > seuil_humidite + 10) {
+              puissance = 1.0; // 100% si l'humidité est beaucoup trop haute
+            } else if (humidite_actuelle > seuil_humidite + 5) {
+              puissance = 0.5; // 50% si l'humidité dépasse légèrement le seuil
+            } else if (humidite_actuelle > seuil_humidite) {
+              puissance = 0.3; // 30% si on approche du seuil
+            } else {
               puissance = 0.0; // Chauffage OFF
             }
-          } else if (mode == "Séchage PLA") {
-            puissance = 1.0; // Chauffage à 100%
-            delay(14400000); // 4 heures
-            id(mode_fonctionnement).publish_state("Maintien");
-          } else if (mode == "Séchage ABS") {
-            puissance = 1.0; // Chauffage à 100%
-            delay(14400000); // 4 heures
-            id(mode_fonctionnement).publish_state("Maintien");
-          } else if (mode == "Séchage Nylon") {
-            puissance = 1.0; // Chauffage à 100%
-            delay(14400000); // 4 heures
+          } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+            puissance = 1.0; // Chauffage à 100% pendant la durée définie
+            delay(id(duree_sechage).state * 3600000); // Conversion heures → millisecondes
             id(mode_fonctionnement).publish_state("Maintien");
           }
 
           id(chauffage_dimmable).turn_on();
           id(chauffage_dimmable).set_brightness(puissance);
 
-# Affichage OLED SSD1306
+# Affichage OLED SSD1306 avec mode veille
 display:
   - platform: ssd1306_i2c
     model: "SSD1306_128x64"
     address: 0x3C
+    id: ecran_oled
     lambda: |-
-      it.printf(0, 0, id(my_font), "Temp: %.1f°C", id(temperature).state);
-      it.printf(0, 20, id(my_font), "Humidité: %.1f%%", id(humidity).state);
-      it.printf(0, 40, id(my_font), "Cible: %.1f%%", id(humidite_cible).state);
-      it.printf(0, 60, id(my_font), "Mode: %s", id(mode_fonctionnement).state.c_str());
+      it.printf(0, 0, id(my_font), "Mode: %s", id(mode_fonctionnement).state.c_str());
+      it.printf(0, 20, id(my_font), "Temp: %.1f°C", id(temperature).state);
+      it.printf(0, 40, id(my_font), "Humidité: %.1f%%", id(humidity).state);
+      it.printf(0, 60, id(my_font), "Cible: %.1f%%", id(humidite_cible).state);
+    update_interval: 5s
 
 font:
   - file: "gfonts://Roboto"
     id: my_font
     size: 12
+
+# Mode veille pour l'écran OLED
+interval:
+  - interval: 10min
+    then:
+      - display.turn_off: ecran_oled
 
 # Boutons pour ajuster l'humidité cible et changer de mode
 binary_sensor:
@@ -137,6 +151,7 @@ binary_sensor:
     on_press:
       then:
         - number.increment: humidite_cible
+        - display.turn_on: ecran_oled  # Réveille l'écran
 
   - platform: gpio
     pin:
@@ -146,23 +161,20 @@ binary_sensor:
     on_press:
       then:
         - number.decrement: humidite_cible
+        - display.turn_on: ecran_oled  # Réveille l'écran
 
   - platform: gpio
     pin:
-      number: 27  # GPIO27 pour changer de mode (remplaçable par GPIO25 ou 32 si problème)
+      number: 27  # GPIO27 pour changer de mode
       mode: INPUT_PULLUP
     name: "Bouton Mode"
     on_press:
       then:
         - lambda: |-
-            std::string mode = id(mode_fonctionnement).state;
-            if (mode == "Maintien") {
-              id(mode_fonctionnement).publish_state("Séchage PLA");
-            } else if (mode == "Séchage PLA") {
-              id(mode_fonctionnement).publish_state("Séchage ABS");
-            } else if (mode == "Séchage ABS") {
-              id(mode_fonctionnement).publish_state("Séchage Nylon");
+            if (id(mode_fonctionnement).state == "Maintien") {
+              id(mode_fonctionnement).publish_state("Séchage approfondi");
             } else {
               id(mode_fonctionnement).publish_state("Maintien");
             }
-            id(gestion_chauffage).execute();  # Correction ici
+            id(gestion_chauffage).execute();
+        - display.turn_on: ecran_oled  # Réveille l'écran
