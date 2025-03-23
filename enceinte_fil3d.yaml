@@ -173,7 +173,7 @@ i2c:
 display:
   - platform: ssd1306_i2c
     model: "SSD1306_128x64"
-    address: 0x3C
+    address: 0x3D
     id: ecran_oled
     lambda: |-
       it.printf(0, 0, id(my_font), "Mode: %s", "Test");
