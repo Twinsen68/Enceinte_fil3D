@@ -86,7 +86,7 @@ L’enceinte dispose de trois boutons physiques pour ajuster les paramètres et 
 ESPHome permet d’inclure la configuration directement depuis GitHub.
 ➡ Copiez ce fichier dans ESPHome :
 
-esp32:  
+`esp32:  
   board: esp32dev  # Spécifie le modèle de la carte ESP32 (ESP32 DevKit V1 ici).
   framework:
     type: arduino  # Utilisation du framework Arduino, largement compatible avec ESPHome.
@@ -97,7 +97,7 @@ packages:  # Inclusion d'une configuration externe pour modularité et réutilis
     file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
-esphome:  
+`esphome:  
   name: enceinte_fil3d
   name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
   friendly_name: "Enceinte filament 3D contrôlée"
@@ -108,7 +108,7 @@ api:  # Active l’API ESPHome pour la communication avec Home Assistant.
 
 wifi:
   ssid: !secret wifi_ssid  # Nom du réseau Wi-Fi
-  password: !secret wifi_password  # Mot de passe du Wi-Fi
+  password: !secret wifi_password  # Mot de passe du Wi-Fi`
 
 3️⃣ Déploiement dans ESPHome
 	1.	Ouvrez ESPHome dans Home Assistant.
