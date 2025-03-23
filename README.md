@@ -22,10 +22,10 @@ Compatible avec Home Assistant via ESPHome pour une gestion domotique complète.
 
 ➡ Objectif : Garder l’humidité sous un seuil défini en activant le chauffage modérément.
 ✅ Idéal pour stocker les filaments sans les abîmer.
-	•	Si l’humidité est supérieure au seuil +10% → Chauffage à 100%
-	•	Si l’humidité est supérieure au seuil +5% → Chauffage à 50%
-	•	Si l’humidité dépasse légèrement le seuil → Chauffage à 30%
-	•	Si l’humidité est sous le seuil → Chauffage éteint
+	-	Si l’humidité est supérieure au seuil +10% → Chauffage à 100%
+	-	Si l’humidité est supérieure au seuil +5% → Chauffage à 50%
+	-	Si l’humidité dépasse légèrement le seuil → Chauffage à 30%
+	-	Si l’humidité est sous le seuil → Chauffage éteint
 
 ⸻
 
@@ -35,9 +35,9 @@ Compatible avec Home Assistant via ESPHome pour une gestion domotique complète.
 ✅ Idéal après une ouverture de l’enceinte ou lorsque l’humidité est trop élevée.
 
 Température recommandée par type de filament :
-	•	PLA : 40-45°C (4 heures)
-	•	ABS : 65-75°C (4 heures)
-	•	Nylon : 70-80°C (4 heures)
+	-	PLA : 40-45°C (4 heures)
+	-	ABS : 65-75°C (4 heures)
+	-	Nylon : 70-80°C (4 heures)
 
 Une fois terminé, l’enceinte repasse automatiquement en mode Maintien.
 La durée est réglable de 1h à 8h via Home Assistant.
@@ -53,30 +53,30 @@ L’écran affiche en permanence :
 `Humidité: XX.X%  `
 `Cible: XX.X%`
 
-•	Extinction automatique après 10 minutes d’inactivité
-•	Rallumage dès qu’un bouton est pressé
+-	Extinction automatique après 10 minutes d’inactivité
+-	Rallumage dès qu’un bouton est pressé
 
 ⸻
 
 🎛️ Boutons de contrôle
 
 L’enceinte dispose de trois boutons physiques pour ajuster les paramètres et changer de mode.
-	•	Bouton + (GPIO26) → Augmente le seuil d’humidité cible.
-	•	Bouton - (GPIO13) → Diminue le seuil d’humidité cible.
-	•	Bouton Mode (GPIO27) → Alterne entre “Maintien” et “Séchage approfondi”.
+	-	Bouton + (GPIO26) → Augmente le seuil d’humidité cible.
+	-	Bouton - (GPIO13) → Diminue le seuil d’humidité cible.
+	-	Bouton Mode (GPIO27) → Alterne entre “Maintien” et “Séchage approfondi”.
 
 ⸻
 
 🛠️ Installation et Déploiement ESPHome
 
 1️⃣ Matériel requis
-	•	ESP32 DevKit V1
-	•	Capteur d’humidité et température DHT20
-	•	Écran OLED SSD1306
-	•	MOSFET pour le chauffage
-	•	Chauffage 12V ou 24V (selon ton installation)
-	•	Boutons poussoirs pour le contrôle physique
-	•	Alimentation 5V pour l’ESP32
+	-	ESP32 DevKit V1
+	-	Capteur d’humidité et température DHT20
+	-	Écran OLED SSD1306
+	-	MOSFET pour le chauffage
+	-	Chauffage 12V ou 24V (selon ton installation)
+	-	Boutons poussoirs pour le contrôle physique
+	-	Alimentation 5V pour l’ESP32
 
 ⸻
 
@@ -121,9 +121,9 @@ wifi:
 ⸻
 
 ❓ Dépannage
-	•	Le chauffage ne s’allume pas : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
-	•	L’écran OLED n’affiche rien : Vérifiez qu’il est bien alimenté et connecté à SDA/SCL.
-	•	Le module ne se connecte pas au WiFi : Vérifiez le SSID et le mot de passe dans ESPHome.
+	-	Le chauffage ne s’allume pas : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
+	-	L’écran OLED n’affiche rien : Vérifiez qu’il est bien alimenté et connecté à SDA/SCL.
+	-	Le module ne se connecte pas au WiFi : Vérifiez le SSID et le mot de passe dans ESPHome.
 
 ⸻
 
@@ -137,9 +137,9 @@ Besoin d’améliorations ? Ouvre une issue sur GitHub ou demande des conseils !
 ⸻
 
 📎 Liens utiles
-	•	ESPHome Documentation
-	•	Home Assistant
-	•	GitHub du projet
+	-	ESPHome Documentation
+	-	Home Assistant
+	-	GitHub du projet
 
 ⸻
 
