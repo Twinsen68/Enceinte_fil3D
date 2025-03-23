@@ -47,10 +47,11 @@ La durée est réglable de 1h à 8h via Home Assistant.
 📺 Affichage OLED
 
 L’écran affiche en permanence :
-`Mode: Maintien / Séchage  
-Temp: XX.X°C  
-Humidité: XX.X%  
-Cible: XX.X%  `
+
+`Mode: Maintien / Séchage  `
+`Temp: XX.X°C  `
+`Humidité: XX.X%  `
+`Cible: XX.X%`
 
 	•	Extinction automatique après 10 minutes d’inactivité
 	•	Rallumage dès qu’un bouton est pressé
@@ -97,7 +98,7 @@ packages:  # Inclusion d'une configuration externe pour modularité et réutilis
     file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
-`esphome:  
+esphome:  
   name: enceinte_fil3d
   name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
   friendly_name: "Enceinte filament 3D contrôlée"
@@ -108,7 +109,7 @@ api:  # Active l’API ESPHome pour la communication avec Home Assistant.
 
 wifi:
   ssid: !secret wifi_ssid  # Nom du réseau Wi-Fi
-  password: !secret wifi_password  # Mot de passe du Wi-Fi`
+  password: !secret wifi_password  # Mot de passe du Wi-Fi
 
 3️⃣ Déploiement dans ESPHome
 	1.	Ouvrez ESPHome dans Home Assistant.
