@@ -109,6 +109,7 @@ api:  # Active l’API ESPHome pour la communication avec Home Assistant.
 wifi:
   ssid: !secret wifi_ssid  # Nom du réseau Wi-Fi
   password: !secret wifi_password  # Mot de passe du Wi-Fi
+  ```
 
 ## 3️⃣ Déploiement dans ESPHome
 
