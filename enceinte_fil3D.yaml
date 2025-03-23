@@ -139,7 +139,9 @@ font:
 interval:
   - interval: 10min
     then:
-      - display.turn_off: ecran_oled
+      - lambda: |-
+          id(ecran_oled).clear();
+          id(ecran_oled).update();
 
 # Boutons pour ajuster l'humidité cible et changer de mode
 binary_sensor:
