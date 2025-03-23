@@ -1,5 +1,5 @@
 esphome:
-  name: enceinte_fil3D
+  name: enceinte_fil3d
   friendly_name: "Enceinte Filament 3D controlée par ESP32"
   on_boot:
     priority: 600
