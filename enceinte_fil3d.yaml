@@ -1,5 +1,5 @@
 esphome:
-  name: enceinte-fil3d
+  name: enceinte_fil3d
   friendly_name: "Enceinte filament 3D contrôlée"
   on_boot:
     priority: 600
