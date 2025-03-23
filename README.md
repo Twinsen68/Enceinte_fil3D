@@ -121,6 +121,24 @@ wifi:
 
 ---
 
+## 🔄 Mise à jour du cache ESPHome
+
+Si vous modifiez le fichier `enceinte_fil3D.yaml` et que les changements ne sont pas pris en compte, il est nécessaire de forcer la mise à jour du cache d'ESPHome.  
+Pour cela, il suffit de modifier la version du fichier dans `install.yaml` :
+
+**Dans `install.yaml`, remplace :**
+```yaml
+ref: v1.0.0
+```
+**Par une nouvelle version :**
+```yaml
+ref: v1.0.1
+```
+
+Ensuite, **redémarrez ESPHome et rechargez la configuration** pour que les mises à jour soient bien prises en compte.
+
+---
+
 # ❓ Dépannage
 
 - **Le chauffage ne s'allume pas** : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
