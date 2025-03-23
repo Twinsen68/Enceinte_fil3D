@@ -1,6 +1,6 @@
 esphome:
   name: enceinte-fil3d
-  friendly_name: "Enceinte filament 3D controllée"
+  friendly_name: "Enceinte filament 3D contrôlée"
   on_boot:
     priority: 600
     then:
@@ -100,21 +100,20 @@ script:
 
           if (id(mode_fonctionnement).state == "Maintien") {
             if (humidite_actuelle > seuil_humidite + 10) {
-              puissance = 1.0; // 100% si l'humidité est beaucoup trop haute
+              puissance = 1.0;
             } else if (humidite_actuelle > seuil_humidite + 5) {
-              puissance = 0.5; // 50% si l'humidité dépasse légèrement le seuil
+              puissance = 0.5;
             } else if (humidite_actuelle > seuil_humidite) {
-              puissance = 0.3; // 30% si on approche du seuil
+              puissance = 0.3;
             } else {
-              puissance = 0.0; // Chauffage OFF
+              puissance = 0.0;
             }
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            puissance = 1.0; // Chauffage à 100% pendant la durée définie
-            delay(id(duree_sechage).state * 3600000); // Conversion heures → millisecondes
+            puissance = 1.0;
+            - script.wait: !lambda return id(duree_sechage).state * 3600000;
             id(mode_fonctionnement).publish_state("Maintien");
           }
 
-          id(chauffage_dimmable).turn_on();
           id(chauffage_dimmable).turn_on().set_level(puissance);
 
 # Affichage OLED SSD1306 avec mode veille
@@ -142,12 +141,13 @@ interval:
       - lambda: |-
           id(ecran_oled).clear();
           id(ecran_oled).update();
+          id(ecran_oled).turn_off();
 
 # Boutons pour ajuster l'humidité cible et changer de mode
 binary_sensor:
   - platform: gpio
     pin:
-      number: 26  # GPIO26 pour augmenter l'humidité cible
+      number: 26
       mode: INPUT_PULLUP
     name: "Bouton +"
     on_press:
@@ -158,7 +158,7 @@ binary_sensor:
 
   - platform: gpio
     pin:
-      number: 13  # GPIO13 pour diminuer l'humidité cible
+      number: 13
       mode: INPUT_PULLUP
     name: "Bouton -"
     on_press:
@@ -169,7 +169,7 @@ binary_sensor:
 
   - platform: gpio
     pin:
-      number: 27  # GPIO27 pour changer de mode
+      number: 27
       mode: INPUT_PULLUP
     name: "Bouton Mode"
     on_press:
@@ -180,6 +180,6 @@ binary_sensor:
             } else {
               id(mode_fonctionnement).publish_state("Maintien");
             }
-            id(gestion_chauffage).execute();
+        - script.execute: gestion_chauffage
         - lambda: |-
-            id(ecran_oled).update();  
+            id(ecran_oled).update();
