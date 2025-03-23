@@ -53,8 +53,8 @@ L’écran affiche en permanence :
 `Humidité: XX.X%  `
 `Cible: XX.X%`
 
-	•	Extinction automatique après 10 minutes d’inactivité
-	•	Rallumage dès qu’un bouton est pressé
+•	Extinction automatique après 10 minutes d’inactivité
+•	Rallumage dès qu’un bouton est pressé
 
 ⸻
 
