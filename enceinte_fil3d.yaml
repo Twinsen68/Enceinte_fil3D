@@ -111,7 +111,7 @@ script:
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
             puissance = 1.0;
             - delay: !lambda |-
-                return id(duree_sechage).state * 3600000;
+                return static_cast<int>(id(duree_sechage).state * 3600000);
             id(mode_fonctionnement).publish_state("Maintien");
           }
 
