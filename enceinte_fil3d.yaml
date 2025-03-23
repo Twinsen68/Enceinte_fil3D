@@ -30,160 +30,158 @@ i2c:
   scl: 22
   scan: true
 
-# Capteur de température et humidité DHT20
-sensor:
-  - platform: aht10
-    temperature:
-      name: "Température"
-      id: temperature
-    humidity:
-      name: "Humidité"
-      id: humidity
-    update_interval: 10s
+# [Désactivé] Capteur de température et humidité DHT20
+# sensor:
+#   - platform: aht10
+#     temperature:
+#       name: "Température"
+#       id: temperature
+#     humidity:
+#       name: "Humidité"
+#       id: humidity
+#     update_interval: 10s
 
-# Sortie PWM pour contrôle du chauffage (MOSFET)
-output:
-  - platform: ledc
-    pin: 14  # Contrôle du MOSFET en PWM
-    frequency: 1000 Hz
-    id: chauffage_pwm
+# [Désactivé] Sortie PWM et lumière
+# output:
+#   - platform: ledc
+#     pin: 14  # Contrôle du MOSFET en PWM
+#     frequency: 1000 Hz
+#     id: chauffage_pwm
 
-light:
-  - platform: monochromatic
-    output: chauffage_pwm
-    name: "Chauffage Progressif"
-    id: chauffage_dimmable
+# light:
+#   - platform: monochromatic
+#     output: chauffage_pwm
+#     name: "Chauffage Progressif"
+#     id: chauffage_dimmable
 
-# Nombre pour régler le seuil d'humidité cible
-number:
-  - platform: template
-    name: "Humidité cible"
-    id: humidite_cible
-    optimistic: true
-    min_value: 10
-    max_value: 50
-    step: 1
-    initial_value: 30
+# [Désactivé] Nombre pour régler l'humidité cible et la durée du séchage
+# number:
+#   - platform: template
+#     name: "Humidité cible"
+#     id: humidite_cible
+#     optimistic: true
+#     min_value: 10
+#     max_value: 50
+#     step: 1
+#     initial_value: 30
+#
+#   - platform: template
+#     name: "Durée du séchage"
+#     id: duree_sechage
+#     optimistic: true
+#     min_value: 1
+#     max_value: 8
+#     step: 1
+#     unit_of_measurement: "h"
+#     initial_value: 4
 
-# Sélection de la durée du séchage
-  - platform: template
-    name: "Durée du séchage"
-    id: duree_sechage
-    optimistic: true
-    min_value: 1
-    max_value: 8
-    step: 1
-    unit_of_measurement: "h"
-    initial_value: 4
+# [Désactivé] Sélection du mode de fonctionnement
+# select:
+#   - platform: template
+#     name: "Mode de fonctionnement"
+#     id: mode_fonctionnement
+#     optimistic: true
+#     options: ["Maintien", "Séchage approfondi"]
+#     initial_option: "Maintien"
+#     on_value:
+#       - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
+#       - script.execute: gestion_chauffage
 
-# Sélection du mode de fonctionnement
-select:
-  - platform: template
-    name: "Mode de fonctionnement"
-    id: mode_fonctionnement
-    optimistic: true
-    options: ["Maintien", "Séchage approfondi"]
-    initial_option: "Maintien"
-    on_value:
-      - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
-      - script.execute: gestion_chauffage
+# [Désactivé] Automatisation de la gestion du chauffage
+# script:
+#   - id: gestion_chauffage
+#     mode: queued
+#     then:
+#       - lambda: |-
+#           float humidite_actuelle = id(humidity).state;
+#           float seuil_humidite = id(humidite_cible).state;
+#           float puissance = 0;
+#           if (id(mode_fonctionnement).state == "Maintien") {
+#             if (humidite_actuelle > seuil_humidite + 10) {
+#               puissance = 1.0;
+#             } else if (humidite_actuelle > seuil_humidite + 5) {
+#               puissance = 0.5;
+#             } else if (humidite_actuelle > seuil_humidite) {
+#               puissance = 0.3;
+#             } else {
+#               puissance = 0.0;
+#             }
+#           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+#             puissance = 1.0;
+#           }
+#           id(chauffage_dimmable).turn_on().set_brightness(puissance);
+#       - delay: !lambda |-
+#           if (id(mode_fonctionnement).state == "Séchage approfondi") {
+#             int delay_time = (int)(id(duree_sechage).state * 3600000);
+#             id(mode_fonctionnement).publish_state("Maintien");
+#             return delay_time;
+#           }
+#           return 0;
 
-# Automatisation de la gestion du chauffage avec PWM progressif
-script:
-  - id: gestion_chauffage
-    mode: queued
-    then:
-      - lambda: |-
-          float humidite_actuelle = id(humidity).state;
-          float seuil_humidite = id(humidite_cible).state;
-          float puissance = 0;
-          if (id(mode_fonctionnement).state == "Maintien") {
-            if (humidite_actuelle > seuil_humidite + 10) {
-              puissance = 1.0;
-            } else if (humidite_actuelle > seuil_humidite + 5) {
-              puissance = 0.5;
-            } else if (humidite_actuelle > seuil_humidite) {
-              puissance = 0.3;
-            } else {
-              puissance = 0.0;
-            }
-          } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            puissance = 1.0;
-          }
-          id(chauffage_dimmable).turn_on().set_brightness(puissance);
-      - delay: !lambda |-
-          if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            int delay_time = (int)(id(duree_sechage).state * 3600000);
-            id(mode_fonctionnement).publish_state("Maintien");
-            return delay_time;
-          }
-          return 0;
+# [Désactivé] Mode veille pour l'écran OLED
+# interval:
+#   - interval: 10min
+#     then:
+#       - lambda: |-
+#           id(ecran_oled).clear();
+#           id(ecran_oled).update();
 
-# Affichage OLED SSD1306 avec mode veille
+# [Désactivé] Boutons pour ajuster l'humidité et changer de mode
+# binary_sensor:
+#   - platform: gpio
+#     pin:
+#       number: 26
+#       mode: INPUT_PULLUP
+#     name: "Bouton +"
+#     on_press:
+#       then:
+#         - number.increment: humidite_cible
+#         - script.execute: gestion_chauffage
+#         - lambda: |-
+#             id(ecran_oled).update();  
+#
+#   - platform: gpio
+#     pin:
+#       number: 13
+#       mode: INPUT_PULLUP
+#     name: "Bouton -"
+#     on_press:
+#       then:
+#         - number.decrement: humidite_cible
+#         - script.execute: gestion_chauffage
+#         - lambda: |-
+#             id(ecran_oled).update();  
+#
+#   - platform: gpio
+#     pin:
+#       number: 27
+#       mode: INPUT_PULLUP
+#     name: "Bouton Mode"
+#     on_press:
+#       then:
+#         - lambda: |-
+#             if (id(mode_fonctionnement).state == "Maintien") {
+#               id(mode_fonctionnement).publish_state("Séchage approfondi");
+#             } else {
+#               id(mode_fonctionnement).publish_state("Maintien");
+#             }
+#         - script.execute: gestion_chauffage
+#         - lambda: |-
+#             id(ecran_oled).update();
+
 display:
   - platform: ssd1306_i2c
     model: "SSD1306_128x64"
     address: 0x3C
     id: ecran_oled
     lambda: |-
-      it.printf(0, 0, id(my_font), "Mode: %s", id(mode_fonctionnement).state.c_str());
-      it.printf(0, 20, id(my_font), "Temp: %.1f°C", id(temperature).state);
-      it.printf(0, 40, id(my_font), "Humidité: %.1f%%", id(humidity).state);
-      it.printf(0, 60, id(my_font), "Cible: %.1f%%", id(humidite_cible).state);
+      it.printf(0, 0, id(my_font), "Mode: %s", "Test");
+      it.printf(0, 20, id(my_font), "Temp: %.1f°C", 0.0);
+      it.printf(0, 40, id(my_font), "Humidité: %.1f%%", 0.0);
+      it.printf(0, 60, id(my_font), "Cible: %.1f%%", 0.0);
     update_interval: 5s
 
 font:
   - file: "gfonts://Roboto"
     id: my_font
     size: 12
-
-# Mode veille pour l'écran OLED
-interval:
-  - interval: 10min
-    then:
-      - lambda: |-
-          id(ecran_oled).clear();
-          id(ecran_oled).update();
-
-# Boutons pour ajuster l'humidité cible et changer de mode
-binary_sensor:
-  - platform: gpio
-    pin:
-      number: 26
-      mode: INPUT_PULLUP
-    name: "Bouton +"
-    on_press:
-      then:
-        - number.increment: humidite_cible
-        - script.execute: gestion_chauffage
-        - lambda: |-
-            id(ecran_oled).update();  
-
-  - platform: gpio
-    pin:
-      number: 13
-      mode: INPUT_PULLUP
-    name: "Bouton -"
-    on_press:
-      then:
-        - number.decrement: humidite_cible
-        - script.execute: gestion_chauffage
-        - lambda: |-
-            id(ecran_oled).update();  
-
-  - platform: gpio
-    pin:
-      number: 27
-      mode: INPUT_PULLUP
-    name: "Bouton Mode"
-    on_press:
-      then:
-        - lambda: |-
-            if (id(mode_fonctionnement).state == "Maintien") {
-              id(mode_fonctionnement).publish_state("Séchage approfondi");
-            } else {
-              id(mode_fonctionnement).publish_state("Maintien");
-            }
-        - script.execute: gestion_chauffage
-        - lambda: |-
-            id(ecran_oled).update();
