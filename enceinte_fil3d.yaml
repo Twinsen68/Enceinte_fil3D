@@ -110,9 +110,9 @@ script:
             }
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
             puissance = 1.0;
-            - delay: !lambda |-
-                auto duration = static_cast<int>(id(duree_sechage).state * 3600000);
-                return duration;
+            - lambda: |-
+                int duration = static_cast<int>(id(duree_sechage).state * 3600000);
+                delay(duration);
             id(mode_fonctionnement).publish_state("Maintien");
           }
           id(chauffage_dimmable).turn_on().set_brightness(puissance);
