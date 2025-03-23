@@ -28,6 +28,7 @@ logger:
 i2c:
   sda: 21
   scl: 22
+  frequency: 100000 Hz
   scan: true
 
 # [Désactivé] Capteur de température et humidité DHT20
