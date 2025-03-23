@@ -5,12 +5,12 @@
 Cette enceinte de stockage pour filaments 3D permet de maintenir une faible humidité grâce à un chauffage intelligent contrôlé par ESPHome.
 
 Fonctionnalités principales :
-	•	Mode maintien : Maintient l’humidité sous un seuil défini.
-	•	Mode séchage approfondi : Assèche intensément les filaments et le dessicant.
-	•	Régulation intelligente de la chauffe (PWM progressif selon l’humidité).
-	•	Affichage OLED avec veille automatique après 10 minutes d’inactivité.
-	•	Réglage de la durée du séchage approfondi (1 à 8 heures).
-	•	Contrôle via boutons physiques et Home Assistant.
+  •	Mode maintien : Maintient l’humidité sous un seuil défini.
+  •	Mode séchage approfondi : Assèche intensément les filaments et le dessicant.
+  •	Régulation intelligente de la chauffe (PWM progressif selon l’humidité).
+  •	Affichage OLED avec veille automatique après 10 minutes d’inactivité.
+  •	Réglage de la durée du séchage approfondi (1 à 8 heures).
+  •	Contrôle via boutons physiques et Home Assistant.
 
 Compatible avec Home Assistant via ESPHome pour une gestion domotique complète.
 
