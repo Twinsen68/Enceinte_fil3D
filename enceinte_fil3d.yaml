@@ -114,7 +114,6 @@ script:
                 return static_cast<int>(id(duree_sechage).state * 3600000);
             id(mode_fonctionnement).publish_state("Maintien");
           }
-
           id(chauffage_dimmable).turn_on().set_brightness(puissance);
 
 # Affichage OLED SSD1306 avec mode veille
