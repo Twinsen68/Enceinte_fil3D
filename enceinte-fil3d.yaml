@@ -1,5 +1,5 @@
 esphome:
-  name: enceinte_fil3d
+  name: enceinte-fil3d
   friendly_name: "Enceinte filament 3D controllée"
   on_boot:
     priority: 600
@@ -115,7 +115,7 @@ script:
           }
 
           id(chauffage_dimmable).turn_on();
-          id(chauffage_dimmable).set_brightness(puissance);
+          id(chauffage_dimmable).turn_on().set_level(puissance);
 
 # Affichage OLED SSD1306 avec mode veille
 display:
@@ -154,7 +154,7 @@ binary_sensor:
       then:
         - number.increment: humidite_cible
         - lambda: |-
-            id(ecran_oled).update();  # Réveille l’écran en forçant l’actualisation
+            id(ecran_oled).update();  
 
   - platform: gpio
     pin:
@@ -165,7 +165,7 @@ binary_sensor:
       then:
         - number.decrement: humidite_cible
         - lambda: |-
-            id(ecran_oled).update();  # Réveille l’écran en forçant l’actualisation
+            id(ecran_oled).update();  
 
   - platform: gpio
     pin:
@@ -182,4 +182,4 @@ binary_sensor:
             }
             id(gestion_chauffage).execute();
         - lambda: |-
-            id(ecran_oled).update();  # Réveille l’écran en forçant l’actualisation
+            id(ecran_oled).update();  
