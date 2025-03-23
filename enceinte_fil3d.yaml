@@ -110,11 +110,11 @@ script:
             }
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
             puissance = 1.0;
-            - script.wait: !lambda return id(duree_sechage).state * 3600000;
+            - delay: !lambda return (id(duree_sechage).state * 3600000);
             id(mode_fonctionnement).publish_state("Maintien");
           }
 
-          id(chauffage_dimmable).turn_on().set_level(puissance);
+          id(chauffage_dimmable).turn_on().set_brightness(puissance);
 
 # Affichage OLED SSD1306 avec mode veille
 display:
@@ -141,7 +141,6 @@ interval:
       - lambda: |-
           id(ecran_oled).clear();
           id(ecran_oled).update();
-          id(ecran_oled).turn_off();
 
 # Boutons pour ajuster l'humidité cible et changer de mode
 binary_sensor:
@@ -153,6 +152,7 @@ binary_sensor:
     on_press:
       then:
         - number.increment: humidite_cible
+        - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();  
 
@@ -164,6 +164,7 @@ binary_sensor:
     on_press:
       then:
         - number.decrement: humidite_cible
+        - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();  
 
