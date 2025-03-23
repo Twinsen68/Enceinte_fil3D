@@ -12,9 +12,9 @@ packages:  # Inclusion d'une configuration externe pour modularité et réutilis
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
 esphome:  # Configuration générale d'ESPHome pour cet appareil.
-  name: ${name}  # Nom de l'appareil défini dynamiquement via la variable "name".
+  name: enceinte_fil3d  # Nom de l'appareil défini dynamiquement via la variable "name".
   name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
-  friendly_name: ${friendly_name}  # Nom convivial affiché dans Home Assistant.
+  friendly_name: "Enceinte filament 3D controllée"  # Nom convivial affiché dans Home Assistant.
 
 api:  # Active l’API ESPHome pour la communication avec Home Assistant.
   encryption:
