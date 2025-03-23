@@ -6,8 +6,8 @@ esp32:
 # Section commentée permettant l'importation d'une configuration complète depuis ESPHome.
 
 packages:  # Inclusion d'une configuration externe pour modularité et réutilisation.
-  twinsen68.reefmonitor:  # Nom du package inclus.
-    url: https://github.com/twinsen68/enceinte_fil3D  # Lien vers le dépôt GitHub contenant la configuration de l’enceinte.
+  twinsen68.enceinte_fil3d:  # Nom du package inclus.
+    url: https://github.com/Twinsen68/Enceinte_fil3D  # Lien vers le dépôt GitHub contenant la configuration de l’enceinte.
     file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
