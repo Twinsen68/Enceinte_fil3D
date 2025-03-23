@@ -7,12 +7,12 @@ esp32:
 
 packages:  # Inclusion d'une configuration externe pour modularité et réutilisation.
   twinsen68.enceinte_fil3d:  # Nom du package inclus.
-    url: https://github.com/Twinsen68/Enceinte_fil3D  # Lien vers le dépôt GitHub contenant la configuration de l’enceinte.
-    file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
+    url: https://github.com/Twinsen68/enceinte_fil3d  # Lien vers le dépôt GitHub contenant la configuration de l’enceinte.
+    file: enceinte_fil3d.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
 esphome:  # Configuration générale d'ESPHome pour cet appareil.
-  name: enceinte-fil3d  # Nom de l'appareil défini dynamiquement via la variable "name".
+  name: enceinte_fil3d  # Nom de l'appareil défini dynamiquement via la variable "name".
   name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
   friendly_name: "Enceinte filament 3D controllée"  # Nom convivial affiché dans Home Assistant.
 
