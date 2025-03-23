@@ -1,0 +1,168 @@
+esphome:
+  name: enceinte_fil3D
+  friendly_name: "Enceinte Filament 3D controlée par ESP32"
+  on_boot:
+    priority: 600
+    then:
+      - logger.log: "Démarrage de l'enceinte à filament..."
+
+esp32:
+  board: esp32dev
+
+wifi:
+  ssid: "Ton_SSID"
+  password: "Ton_MotDePasse"
+
+  manual_ip:
+    static_ip: 192.168.1.100
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+
+ota:
+  platform: esphome
+
+api:
+logger:
+
+# Définition du bus I2C (utilisé pour DHT20 et OLED)
+i2c:
+  sda: 21
+  scl: 22
+  scan: true
+
+# Capteur de température et humidité DHT20
+sensor:
+  - platform: aht10
+    temperature:
+      name: "Température"
+      id: temperature
+    humidity:
+      name: "Humidité"
+      id: humidity
+    update_interval: 10s
+
+# Sortie PWM pour contrôle du chauffage (MOSFET)
+output:
+  - platform: ledc
+    pin: 14  # Contrôle du MOSFET en PWM
+    frequency: 1000 Hz
+    id: chauffage_pwm
+
+light:
+  - platform: monochromatic
+    output: chauffage_pwm
+    name: "Chauffage Progressif"
+    id: chauffage_dimmable
+
+# Nombre pour régler le seuil d'humidité cible
+number:
+  - platform: template
+    name: "Humidité cible"
+    id: humidite_cible
+    optimistic: true
+    min_value: 10
+    max_value: 50
+    step: 1
+    initial_value: 30
+
+# Sélection du mode de fonctionnement
+select:
+  - platform: template
+    name: "Mode de fonctionnement"
+    id: mode_fonctionnement
+    optimistic: true
+    options: ["Maintien", "Séchage PLA", "Séchage ABS", "Séchage Nylon"]
+    initial_option: "Maintien"
+    on_value:
+      - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
+      - script.execute: gestion_chauffage
+
+# Automatisation de la gestion du chauffage
+script:
+  - id: gestion_chauffage
+    mode: queued
+    then:
+      - lambda: |-
+          std::string mode = id(mode_fonctionnement).state;
+          float humidite_actuelle = id(humidity).state;
+          float seuil_humidite = id(humidite_cible).state;
+          float puissance = 0;
+
+          if (mode == "Maintien") {
+            if (humidite_actuelle > seuil_humidite + 5) {
+              puissance = 0.5; // Chauffage à 50%
+            } else if (humidite_actuelle <= seuil_humidite) {
+              puissance = 0.0; // Chauffage OFF
+            }
+          } else if (mode == "Séchage PLA") {
+            puissance = 1.0; // Chauffage à 100%
+            delay(14400000); // 4 heures
+            id(mode_fonctionnement).publish_state("Maintien");
+          } else if (mode == "Séchage ABS") {
+            puissance = 1.0; // Chauffage à 100%
+            delay(14400000); // 4 heures
+            id(mode_fonctionnement).publish_state("Maintien");
+          } else if (mode == "Séchage Nylon") {
+            puissance = 1.0; // Chauffage à 100%
+            delay(14400000); // 4 heures
+            id(mode_fonctionnement).publish_state("Maintien");
+          }
+
+          id(chauffage_dimmable).turn_on();
+          id(chauffage_dimmable).set_brightness(puissance);
+
+# Affichage OLED SSD1306
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306_128x64"
+    address: 0x3C
+    lambda: |-
+      it.printf(0, 0, id(my_font), "Temp: %.1f°C", id(temperature).state);
+      it.printf(0, 20, id(my_font), "Humidité: %.1f%%", id(humidity).state);
+      it.printf(0, 40, id(my_font), "Cible: %.1f%%", id(humidite_cible).state);
+      it.printf(0, 60, id(my_font), "Mode: %s", id(mode_fonctionnement).state.c_str());
+
+font:
+  - file: "gfonts://Roboto"
+    id: my_font
+    size: 12
+
+# Boutons pour ajuster l'humidité cible et changer de mode
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: 26  # GPIO26 pour augmenter l'humidité cible
+      mode: INPUT_PULLUP
+    name: "Bouton +"
+    on_press:
+      then:
+        - number.increment: humidite_cible
+
+  - platform: gpio
+    pin:
+      number: 13  # GPIO13 pour diminuer l'humidité cible
+      mode: INPUT_PULLUP
+    name: "Bouton -"
+    on_press:
+      then:
+        - number.decrement: humidite_cible
+
+  - platform: gpio
+    pin:
+      number: 27  # GPIO27 pour changer de mode (remplaçable par GPIO25 ou 32 si problème)
+      mode: INPUT_PULLUP
+    name: "Bouton Mode"
+    on_press:
+      then:
+        - lambda: |-
+            std::string mode = id(mode_fonctionnement).state;
+            if (mode == "Maintien") {
+              id(mode_fonctionnement).publish_state("Séchage PLA");
+            } else if (mode == "Séchage PLA") {
+              id(mode_fonctionnement).publish_state("Séchage ABS");
+            } else if (mode == "Séchage ABS") {
+              id(mode_fonctionnement).publish_state("Séchage Nylon");
+            } else {
+              id(mode_fonctionnement).publish_state("Maintien");
+            }
+            id(gestion_chauffage).execute();  # Correction ici
