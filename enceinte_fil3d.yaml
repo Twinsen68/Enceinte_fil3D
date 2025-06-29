@@ -195,7 +195,7 @@ display:
       }
       it.print(0, 39, id(my_font), buffer);
       bool is_on = id(chauffage_dimmable).current_values.is_on();
-      snprintf(buffer, sizeof(buffer), "Chauffage: %s", is_on ? "ON" : "OFF");
+      snprintf(buffer, sizeof(buffer), "Chauffage: %s %.0f%%", is_on ? "ON" : "OFF", id(chauffage_dimmable).current_values.get_brightness() * 100);
       it.print(0, 52, id(my_font), buffer);
     update_interval: 2s
 
