@@ -105,9 +105,9 @@ script:
             } else {
               puissance = 0.0;
             }
-            id(chauffage_dimmable).turn_on({.brightness = puissance});
+            id(chauffage_dimmable).make_call().set_brightness(puissance).perform();
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            id(chauffage_dimmable).turn_on({.brightness = 1.0});
+            id(chauffage_dimmable).make_call().set_brightness(1.0).perform();
           }
       - delay: !lambda |-
           if (id(mode_fonctionnement).state == "Séchage approfondi") {
