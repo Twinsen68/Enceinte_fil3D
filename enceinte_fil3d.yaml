@@ -126,6 +126,7 @@ font:
   - file: "gfonts://Roboto"
     id: my_font
     size: 12
+    glyphs: " !\"%()+=,-_.:°0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèàçùÉÈÀÇÙ"
 
 display:
   - platform: ssd1306_i2c
@@ -144,7 +145,7 @@ display:
       it.print(0, 36, id(my_font), buffer);
       float brightness = id(chauffage_dimmable).current_values.get_brightness();
       snprintf(buffer, sizeof(buffer), "Chauffage: %.0f %%", brightness * 100.0);
-      it.print(0, 48, id(my_font), buffer);
+      it.print(0, 45, id(my_font), buffer);
     update_interval: 2s
 
 binary_sensor:
