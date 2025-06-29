@@ -97,12 +97,22 @@ number:
     unit_of_measurement: "h"
     initial_value: 4
 
+  - platform: template
+    name: "Puissance Test"
+    id: puissance_test
+    optimistic: true
+    min_value: 0
+    max_value: 100
+    step: 10
+    unit_of_measurement: "%"
+    initial_value: 0
+
 select:
   - platform: template
     name: "Mode de fonctionnement"
     id: mode_fonctionnement
     optimistic: true
-    options: ["Off", "Maintien", "Séchage approfondi"]
+    options: ["Off", "Maintien", "Séchage approfondi", "Test"]
     initial_option: "Off"
     on_value:
       then:
@@ -119,6 +129,12 @@ script:
           if (isnan(humidite_actuelle)) {
             ESP_LOGW("gestion_chauffage", "Lecture DHT échouée, désactivation du chauffage par sécurité.");
             id(chauffage_dimmable).make_call().set_brightness(0.0).perform();
+            return;
+          }
+          if (id(mode_fonctionnement).state == "Test") {
+            float puissance_test = id(puissance_test).state / 100.0;
+            ESP_LOGD("gestion_chauffage", "Mode Test: Puissance manuelle = %.1f%%", id(puissance_test).state);
+            id(chauffage_dimmable).make_call().set_brightness(puissance_test).perform();
             return;
           }
           if (id(mode_fonctionnement).state == "Maintien") {
@@ -172,6 +188,8 @@ display:
         snprintf(buffer, sizeof(buffer), "Cible M: %.0f %%", id(humidite_cible_maintien).state);
       } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
         snprintf(buffer, sizeof(buffer), "Cible S: %.0f %%", id(humidite_cible_sechage).state);
+      } else if (id(mode_fonctionnement).state == "Test") {
+        snprintf(buffer, sizeof(buffer), "Puissance T: %.0f%%", id(puissance_test).state);
       } else {
         snprintf(buffer, sizeof(buffer), "Cible: -- %%");
       }
@@ -189,7 +207,16 @@ binary_sensor:
     name: "Bouton +"
     on_press:
       then:
-        - number.increment: humidite_cible_maintien
+        - lambda: |-
+            if (id(mode_fonctionnement).state == "Test") {
+              float current = id(puissance_test).state;
+              current += 10;
+              if (current > 100) current = 100;
+              id(puissance_test).publish_state(current);
+              ESP_LOGD("bouton_plus", "Puissance Test incrémentée à %.0f%%", current);
+            } else {
+              id(humidite_cible_maintien).increment();
+            }
         - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();
@@ -202,7 +229,16 @@ binary_sensor:
     name: "Bouton -"
     on_press:
       then:
-        - number.decrement: humidite_cible_maintien
+        - lambda: |-
+            if (id(mode_fonctionnement).state == "Test") {
+              float current = id(puissance_test).state;
+              current -= 10;
+              if (current < 0) current = 0;
+              id(puissance_test).publish_state(current);
+              ESP_LOGD("bouton_moins", "Puissance Test décrémentée à %.0f%%", current);
+            } else {
+              id(humidite_cible_maintien).decrement();
+            }
         - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();
@@ -220,6 +256,8 @@ binary_sensor:
               id(mode_fonctionnement).publish_state("Séchage approfondi");
             } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
               id(mode_fonctionnement).publish_state("Off");
+            } else if (id(mode_fonctionnement).state == "Off") {
+              id(mode_fonctionnement).publish_state("Test");
             } else {
               id(mode_fonctionnement).publish_state("Maintien");
             }
