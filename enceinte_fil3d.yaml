@@ -105,11 +105,9 @@ script:
             } else {
               puissance = 0.0;
             }
-            id(chauffage_dimmable).turn_on();
-            id(chauffage_dimmable).set_brightness(puissance);
+            id(chauffage_dimmable).turn_on({.brightness = puissance});
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            id(chauffage_dimmable).turn_on();
-            id(chauffage_dimmable).set_brightness(1.0);
+            id(chauffage_dimmable).turn_on({.brightness = 1.0});
           }
       - delay: !lambda |-
           if (id(mode_fonctionnement).state == "Séchage approfondi") {
@@ -135,12 +133,18 @@ display:
     address: 0x3C
     id: ecran_oled
     lambda: |-
-      it.print(0, 0, id(my_font), "Mode: %s", id(mode_fonctionnement).state.c_str());
-      it.printf(0, 15, id(my_font), "Temp: %.1f C", id(temperature).state);
-      it.printf(0, 30, id(my_font), "Hum: %.1f %%", id(humidity).state);
-      it.printf(0, 45, id(my_font), "Cible: %.0f %%", id(humidite_cible).state);
+      char buffer[32];
+      snprintf(buffer, sizeof(buffer), "Mode: %s", id(mode_fonctionnement).state.c_str());
+      it.print(0, 0, id(my_font), buffer);
+      snprintf(buffer, sizeof(buffer), "Temp: %.1f C", id(temperature).state);
+      it.print(0, 15, id(my_font), buffer);
+      snprintf(buffer, sizeof(buffer), "Hum: %.1f %%", id(humidity).state);
+      it.print(0, 30, id(my_font), buffer);
+      snprintf(buffer, sizeof(buffer), "Cible: %.0f %%", id(humidite_cible).state);
+      it.print(0, 45, id(my_font), buffer);
       float brightness = id(chauffage_dimmable).current_values.get_brightness();
-      it.printf(0, 60, id(my_font), "Chauffage: %.0f %%", brightness * 100.0);
+      snprintf(buffer, sizeof(buffer), "Chauffage: %.0f %%", brightness * 100.0);
+      it.print(0, 60, id(my_font), buffer);
     update_interval: 2s
 
 binary_sensor:
