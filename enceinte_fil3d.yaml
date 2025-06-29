@@ -144,8 +144,8 @@ display:
       it.print(0, 26, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Cible: %.0f %%", id(humidite_cible).state);
       it.print(0, 39, id(my_font), buffer);
-      float brightness = id(chauffage_dimmable).current_values.get_brightness();
-      snprintf(buffer, sizeof(buffer), "Chauffage: %.0f %%", brightness * 100.0);
+      bool is_on = id(test_pwm_mosfet).state;
+      snprintf(buffer, sizeof(buffer), "Chauffage: %s", is_on ? "ON" : "OFF");
       it.print(0, 52, id(my_font), buffer);
     update_interval: 2s
 
