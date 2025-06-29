@@ -132,8 +132,8 @@ script:
             return;
           }
           if (id(mode_fonctionnement).state == "Test") {
-            float puissance_test = id(puissance_test).state / 100.0f;
-            ESP_LOGD("gestion_chauffage", "Mode Test: Puissance manuelle = %.1f%%", id(puissance_test).state);
+            float puissance_test = id(puissance_test) / 100.0f;
+            ESP_LOGD("gestion_chauffage", "Mode Test: Puissance manuelle = %.1f%%", id(puissance_test));
             id(chauffage_dimmable).make_call().set_brightness(puissance_test).perform();
             return;
           }
