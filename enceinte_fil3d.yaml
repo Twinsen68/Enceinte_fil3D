@@ -237,20 +237,23 @@ display:
       float pwm_pct = id(chauffage_dimmable).current_values.get_brightness() * 100.0f;
       bool chauffe_on = false;
       if (id(mode_fonctionnement).state == "Off") {
-        chauffe_on = false;
-        pwm_pct = 0.0f;
-      } else if (id(mode_fonctionnement).state == "Test") {
-        pwm_pct = id(puissance_test).state;
-        chauffe_on = (pwm_pct > 0.0f);
+        // Affichage modifié en mode Off
+        snprintf(buffer, sizeof(buffer), "Matériel: %s", id(filament).state.c_str());
+        it.print(0, 64, id(my_font), buffer);
       } else {
-        if (pwm_pct > 0.0f) {
-          chauffe_on = true;
+        if (id(mode_fonctionnement).state == "Test") {
+          pwm_pct = id(puissance_test).state;
+          chauffe_on = (pwm_pct > 0.0f);
         } else {
-          chauffe_on = false;
+          if (pwm_pct > 0.0f) {
+            chauffe_on = true;
+          } else {
+            chauffe_on = false;
+          }
         }
+        snprintf(buffer, sizeof(buffer), "Chauffe %s: %s %.0f%%", id(filament).state.c_str(), chauffe_on ? "ON" : "OFF", pwm_pct);
+        it.print(0, 64, id(my_font), buffer);
       }
-      snprintf(buffer, sizeof(buffer), "Chauffage: %s %.0f%%", chauffe_on ? "ON" : "OFF", pwm_pct);
-      it.print(0, 64, id(my_font), buffer);
     update_interval: 2s
 
 binary_sensor:
@@ -262,12 +265,22 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
             if (id(mode_fonctionnement).state == "Test") {
               float current = id(puissance_test).state;
               current += 10;
               if (current > 100) current = 100;
               id(puissance_test).publish_state(current);
               ESP_LOGD("bouton_plus", "Puissance Test incrémentée à %.0f%%", current);
+            } else if (id(mode_fonctionnement).state == "Off") {
+              auto it = std::find(filaments.begin(), filaments.end(), id(filament).state);
+              size_t index = 0;
+              if (it != filaments.end()) {
+                index = std::distance(filaments.begin(), it);
+                index = (index + 1) % filaments.size();
+              }
+              id(filament).publish_state(filaments[index]);
+              ESP_LOGD("bouton_plus", "Filament sélectionné: %s", filaments[index].c_str());
             } else {
               id(humidite_cible_maintien).publish_state(std::min(id(humidite_cible_maintien).state + 1, 50.0f));
             }
@@ -284,12 +297,26 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
             if (id(mode_fonctionnement).state == "Test") {
               float current = id(puissance_test).state;
               current -= 10;
               if (current < 0) current = 0;
               id(puissance_test).publish_state(current);
               ESP_LOGD("bouton_moins", "Puissance Test décrémentée à %.0f%%", current);
+            } else if (id(mode_fonctionnement).state == "Off") {
+              auto it = std::find(filaments.begin(), filaments.end(), id(filament).state);
+              size_t index = 0;
+              if (it != filaments.end()) {
+                index = std::distance(filaments.begin(), it);
+                if (index == 0) {
+                  index = filaments.size() - 1;
+                } else {
+                  index = index - 1;
+                }
+              }
+              id(filament).publish_state(filaments[index]);
+              ESP_LOGD("bouton_moins", "Filament sélectionné: %s", filaments[index].c_str());
             } else {
               id(humidite_cible_maintien).publish_state(std::max(id(humidite_cible_maintien).state - 1, 10.0f));
             }
