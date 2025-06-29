@@ -141,7 +141,7 @@ display:
       snprintf(buffer, sizeof(buffer), "Temp: %.1f C", id(temperature).state);
       it.print(0, 13, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Hum: %.1f %%", id(humidity).state);
-      i t.print(0, 26, id(my_font), buffer);
+      it.print(0, 26, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Cible: %.0f %%", id(humidite_cible).state);
       it.print(0, 39, id(my_font), buffer);
       float brightness = id(chauffage_dimmable).current_values.get_brightness();
