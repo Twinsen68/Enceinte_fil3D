@@ -132,7 +132,7 @@ script:
             return;
           }
           if (id(mode_fonctionnement).state == "Test") {
-            float puissance_test = id(puissance_test).state / 100.0;
+            float puissance_test = id(puissance_test).state / 100.0f;
             ESP_LOGD("gestion_chauffage", "Mode Test: Puissance manuelle = %.1f%%", id(puissance_test).state);
             id(chauffage_dimmable).make_call().set_brightness(puissance_test).perform();
             return;
@@ -215,7 +215,7 @@ binary_sensor:
               id(puissance_test).publish_state(current);
               ESP_LOGD("bouton_plus", "Puissance Test incrémentée à %.0f%%", current);
             } else {
-              id(humidite_cible_maintien).increment();
+              id(humidite_cible_maintien).publish_state(std::min(id(humidite_cible_maintien).state + 1, 50.0f));
             }
         - script.execute: gestion_chauffage
         - lambda: |-
@@ -237,7 +237,7 @@ binary_sensor:
               id(puissance_test).publish_state(current);
               ESP_LOGD("bouton_moins", "Puissance Test décrémentée à %.0f%%", current);
             } else {
-              id(humidite_cible_maintien).decrement();
+              id(humidite_cible_maintien).publish_state(std::max(id(humidite_cible_maintien).state - 1, 10.0f));
             }
         - script.execute: gestion_chauffage
         - lambda: |-
