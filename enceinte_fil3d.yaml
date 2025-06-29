@@ -148,6 +148,7 @@ select:
     initial_option: "PLA"
     on_value:
       then:
+        - delay: 500ms
         - lambda: |-
             float temp_cible_filament = 40.0f;
             if (id(filament).state == "PLA") {
