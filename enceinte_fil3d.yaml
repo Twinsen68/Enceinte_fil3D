@@ -243,10 +243,22 @@ display:
         snprintf(buffer, sizeof(buffer), "Temp: Err");
       }
       it.print(0, 13, id(my_font), buffer);
-      if (!isnan(id(humidity).state)) {
-        snprintf(buffer, sizeof(buffer), "Hum: %.1f %%", id(humidity).state);
+      if (id(mode_fonctionnement).state == "Test") {
+        // En mode Test, afficher puissance de chauffe en %
+        float pwm_pct = id(puissance_test).state;
+        snprintf(buffer, sizeof(buffer), "Puiss. Chauffe: %.0f %%", pwm_pct);
+      } else if (id(mode_fonctionnement).state == "Maintien" || id(mode_fonctionnement).state == "Séchage approfondi") {
+        // Afficher Chauffage ON/OFF selon état réel MOSFET et puissance en %
+        float pwm_pct = id(chauffage_dimmable).current_values.get_brightness() * 100.0f;
+        bool chauffe_on = (pwm_pct > 0.0f);
+        snprintf(buffer, sizeof(buffer), "Chauffage %s: %s %.0f%%", id(filament).state.c_str(), chauffe_on ? "ON" : "OFF", pwm_pct);
       } else {
-        snprintf(buffer, sizeof(buffer), "Hum: Err");
+        // En mode Off ou autre, afficher humidité
+        if (!isnan(id(humidity).state)) {
+          snprintf(buffer, sizeof(buffer), "Hum: %.1f %%", id(humidity).state);
+        } else {
+          snprintf(buffer, sizeof(buffer), "Hum: Err");
+        }
       }
       it.print(0, 26, id(my_font), buffer);
       if (id(mode_fonctionnement).state == "Off") {
@@ -255,25 +267,15 @@ display:
       }
       snprintf(buffer, sizeof(buffer), "T Cible: %.0f C", id(temperature_cible).state);
       it.print(0, 52, id(my_font), buffer);
-      float pwm_pct = 0.0f;
-      bool chauffe_on = false;
-      if (id(mode_fonctionnement).state == "Test") {
-        pwm_pct = id(puissance_test).state;
-        chauffe_on = (pwm_pct > 0.0f);
-      } else {
-        pwm_pct = id(chauffage_dimmable).current_values.get_brightness() * 100.0f;
-        chauffe_on = (pwm_pct > 0.0f);
-      }
       if (id(mode_fonctionnement).state == "Off") {
         snprintf(buffer, sizeof(buffer), "Matériel: %s", id(filament).state.c_str());
         it.print(0, 64, id(my_font), buffer);
       } else if (id(mode_fonctionnement).state == "Maintien" || id(mode_fonctionnement).state == "Séchage approfondi") {
-        snprintf(buffer, sizeof(buffer), "Chauffage %s: %s %.0f%%", id(filament).state.c_str(), chauffe_on ? "ON" : "OFF", pwm_pct);
-        it.print(0, 64, id(my_font), buffer);
+        // Ligne 64 déjà utilisée pour affichage chauffage ON/OFF + puissance (ligne 3)
       } else if (id(mode_fonctionnement).state == "Test") {
-        snprintf(buffer, sizeof(buffer), "Chauffage %s: %s %.0f%%", id(filament).state.c_str(), chauffe_on ? "ON" : "OFF", pwm_pct);
-        it.print(0, 64, id(my_font), buffer);
+        // Ligne 64 déjà utilisée pour affichage chauffage ON/OFF + puissance (ligne 3)
       }
+
     update_interval: 2s
 
 binary_sensor:
@@ -287,12 +289,30 @@ binary_sensor:
         - lambda: |-
             const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
             if (id(mode_fonctionnement).state == "Test") {
-              // En mode Test, boutons + et - ajustent puissance_test
-              float current = id(puissance_test).state;
-              current += 10;
-              if (current > 100) current = 100;
-              id(puissance_test).publish_state(current);
-              ESP_LOGD("bouton_plus", "Puissance Test incrémentée à %.0f%%", current);
+              // En mode Test, boutons + et - changent le filament en boucle
+              std::string current_filament = id(filament).state;
+              int index = 0;
+              for (size_t i = 0; i < filaments.size(); i++) {
+                if (filaments[i] == current_filament) {
+                  index = i;
+                  break;
+                }
+              }
+              index = (index + 1) % filaments.size();
+              id(filament).publish_state(filaments[index]);
+              // Mettre à jour température cible selon filament choisi
+              float temp_cible_filament = 40.0f;
+              if (filaments[index] == "PLA") {
+                temp_cible_filament = 40.0f;
+              } else if (filaments[index] == "PETG") {
+                temp_cible_filament = 60.0f;
+              } else if (filaments[index] == "ABS") {
+                temp_cible_filament = 75.0f;
+              } else if (filaments[index] == "Nylon") {
+                temp_cible_filament = 75.0f;
+              }
+              id(temperature_cible).publish_state(temp_cible_filament);
+              ESP_LOGI("bouton_plus", "Filament changé en mode Test: %s, Température cible ajustée à %.1f°C.", filaments[index].c_str(), temp_cible_filament);
             } else {
               // En mode non Test, boutons + et - ne changent que humidite_cible_maintien
               id(humidite_cible_maintien).publish_state(std::min(id(humidite_cible_maintien).state + 1, 50.0f));
@@ -300,7 +320,7 @@ binary_sensor:
         - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();
-        - logger.log: "Humidité cible incrémentée ou puissance test modifiée."
+        - logger.log: "Humidité cible incrémentée ou filament changé en mode Test via bouton +."
 
   - platform: gpio
     pin:
@@ -312,12 +332,30 @@ binary_sensor:
         - lambda: |-
             const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
             if (id(mode_fonctionnement).state == "Test") {
-              // En mode Test, boutons + et - ajustent puissance_test
-              float current = id(puissance_test).state;
-              current -= 10;
-              if (current < 0) current = 0;
-              id(puissance_test).publish_state(current);
-              ESP_LOGD("bouton_moins", "Puissance Test décrémentée à %.0f%%", current);
+              // En mode Test, boutons + et - changent le filament en boucle inverse
+              std::string current_filament = id(filament).state;
+              int index = 0;
+              for (size_t i = 0; i < filaments.size(); i++) {
+                if (filaments[i] == current_filament) {
+                  index = i;
+                  break;
+                }
+              }
+              index = (index - 1 + filaments.size()) % filaments.size();
+              id(filament).publish_state(filaments[index]);
+              // Mettre à jour température cible selon filament choisi
+              float temp_cible_filament = 40.0f;
+              if (filaments[index] == "PLA") {
+                temp_cible_filament = 40.0f;
+              } else if (filaments[index] == "PETG") {
+                temp_cible_filament = 60.0f;
+              } else if (filaments[index] == "ABS") {
+                temp_cible_filament = 75.0f;
+              } else if (filaments[index] == "Nylon") {
+                temp_cible_filament = 75.0f;
+              }
+              id(temperature_cible).publish_state(temp_cible_filament);
+              ESP_LOGI("bouton_moins", "Filament changé en mode Test: %s, Température cible ajustée à %.1f°C.", filaments[index].c_str(), temp_cible_filament);
             } else {
               // En mode non Test, boutons + et - ne changent que humidite_cible_maintien
               id(humidite_cible_maintien).publish_state(std::max(id(humidite_cible_maintien).state - 1, 10.0f));
@@ -325,7 +363,7 @@ binary_sensor:
         - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();
-        - logger.log: "Humidité cible décrémentée ou puissance test modifiée."
+        - logger.log: "Humidité cible décrémentée ou filament changé en mode Test via bouton -."
 
   - platform: gpio
     pin:
