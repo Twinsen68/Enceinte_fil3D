@@ -326,7 +326,8 @@ display:
         snprintf(buffer, sizeof(buffer), "Chauffage: %s %.0f%%", chauffe_on ? "ON" : "OFF", chauffe_on ? pwm_pct : 0.0f);
         it.print(0, 39, id(my_font), buffer);
       } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
-        snprintf(buffer, sizeof(buffer), "Reste: %02dh%02dm", id(temps_restant_sechage)/60, id(temps_restant_sechage)%60);
+        float pwm_pct = id(chauffage_dimmable).current_values.get_brightness() * 100.0f;
+        snprintf(buffer, sizeof(buffer), "Reste: %02dh%02dm P:%3.0f%%", id(temps_restant_sechage)/60, id(temps_restant_sechage)%60, pwm_pct);
         it.print(0, 39, id(my_font), buffer);
       } else {
         snprintf(buffer, sizeof(buffer), "Filament: %s", id(filament).state.c_str());
