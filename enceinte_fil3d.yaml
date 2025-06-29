@@ -81,8 +81,8 @@ select:
     name: "Mode de fonctionnement"
     id: mode_fonctionnement
     optimistic: true
-    options: ["Maintien", "Séchage approfondi"]
-    initial_option: "Maintien"
+    options: ["Off", "Maintien", "Séchage approfondi"]
+    initial_option: "Off"
     on_value:
       then:
         - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
@@ -95,21 +95,17 @@ script:
       - lambda: |-
           float humidite_actuelle = id(humidity).state;
           float seuil_humidite = id(humidite_cible).state;
-          float puissance = 0;
-          if (id(mode_fonctionnement).state == "Maintien") {
-            if (humidite_actuelle > seuil_humidite + 10) {
+          float puissance = 0.0;
+          if (id(mode_fonctionnement).state == "Off") {
+            puissance = 0.0;  // Chauffage off
+          } else if (id(mode_fonctionnement).state == "Maintien") {
+            if (humidite_actuelle > seuil_humidite) {
               puissance = 1.0;
-            } else if (humidite_actuelle > seuil_humidite + 5) {
-              puissance = 0.5;
-            } else if (humidite_actuelle > seuil_humidite) {
-              puissance = 0.3;
-            } else {
-              puissance = 0.0;
             }
-            id(chauffage_dimmable).make_call().set_brightness(puissance).perform();
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            id(chauffage_dimmable).make_call().set_brightness(1.0).perform();
+            puissance = 1.0;
           }
+          id(chauffage_dimmable).make_call().set_brightness(puissance).perform();
       - delay: !lambda |-
           if (id(mode_fonctionnement).state == "Séchage approfondi") {
             int delay_time = (int)(id(duree_sechage).state * 3600000);
@@ -186,6 +182,8 @@ binary_sensor:
         - lambda: |-
             if (id(mode_fonctionnement).state == "Maintien") {
               id(mode_fonctionnement).publish_state("Séchage approfondi");
+            } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+              id(mode_fonctionnement).publish_state("Off");
             } else {
               id(mode_fonctionnement).publish_state("Maintien");
             }
