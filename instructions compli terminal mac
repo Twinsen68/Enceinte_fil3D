@@ -1,0 +1,6 @@
+python3 -m venv venv
+source venv/bin/activate
+pip install esphome
+
+rm -rf /Users/raph/Documents/GitHub/Twinsen68/Enceinte_fil3D/.esphome
+esphome run /Users/raph/Documents/GitHub/Twinsen68/Enceinte_fil3D/install.yaml
