@@ -170,8 +170,8 @@ script:
           }
           if (id(mode_fonctionnement).state == "Test") {
             integral = 0.0f;
-            auto puissance_test = id(puissance_test).state / 100.0f;
-            id(chauffage_dimmable).make_call().set_brightness(puissance_test).perform();
+            float puissance_test_value = id(puissance_test).state / 100.0f;
+            id(chauffage_dimmable).make_call().set_brightness(puissance_test_value).perform();
             return;
           }
           if (id(mode_fonctionnement).state == "Maintien") {
