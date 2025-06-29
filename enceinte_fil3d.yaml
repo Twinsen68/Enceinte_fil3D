@@ -58,13 +58,22 @@ light:
 
 number:
   - platform: template
-    name: "Humidité cible"
-    id: humidite_cible
+    name: "Humidité cible Maintien"
+    id: humidite_cible_maintien
     optimistic: true
     min_value: 10
     max_value: 50
     step: 1
     initial_value: 30
+
+  - platform: template
+    name: "Humidité cible Séchage"
+    id: humidite_cible_sechage
+    optimistic: true
+    min_value: 10
+    max_value: 50
+    step: 1
+    initial_value: 20
 
   - platform: template
     name: "Durée du séchage"
@@ -94,30 +103,25 @@ script:
     then:
       - lambda: |-
           float humidite_actuelle = id(humidity).state;
-          float seuil_humidite = id(humidite_cible).state;
+          float seuil_humidite = 0.0;
+          if (id(mode_fonctionnement).state == "Maintien") {
+            seuil_humidite = id(humidite_cible_maintien).state;
+          } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+            seuil_humidite = id(humidite_cible_sechage).state;
+          }
           float puissance = 0.0;
           if (id(mode_fonctionnement).state == "Off") {
             puissance = 0.0;  // Chauffage off
           } else if (id(mode_fonctionnement).state == "Maintien") {
             if (humidite_actuelle > seuil_humidite) {
               puissance = 1.0;
+            } else {
+              puissance = 0.0;
             }
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
             puissance = 1.0;
           }
           id(chauffage_dimmable).make_call().set_brightness(puissance).perform();
-      - delay: !lambda |-
-          if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            int delay_time = (int)(id(duree_sechage).state * 3600000);
-            id(mode_fonctionnement).publish_state("Maintien");
-            return delay_time;
-          }
-          return 0;
-      - lambda: |-
-          if (id(mode_fonctionnement).state == "Maintien") {
-            // Re-execute script to adjust heating after delay
-            id(gestion_chauffage).execute();
-          }
 
 font:
   - file: "gfonts://Roboto"
@@ -138,7 +142,13 @@ display:
       it.print(0, 13, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Hum: %.1f %%", id(humidity).state);
       it.print(0, 26, id(my_font), buffer);
-      snprintf(buffer, sizeof(buffer), "Cible: %.0f %%", id(humidite_cible).state);
+      if (id(mode_fonctionnement).state == "Maintien") {
+        snprintf(buffer, sizeof(buffer), "Cible M: %.0f %%", id(humidite_cible_maintien).state);
+      } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+        snprintf(buffer, sizeof(buffer), "Cible S: %.0f %%", id(humidite_cible_sechage).state);
+      } else {
+        snprintf(buffer, sizeof(buffer), "Cible: -- %%");
+      }
       it.print(0, 39, id(my_font), buffer);
       bool is_on = id(test_pwm_mosfet).state;
       snprintf(buffer, sizeof(buffer), "Chauffage: %s", is_on ? "ON" : "OFF");
@@ -153,7 +163,7 @@ binary_sensor:
     name: "Bouton +"
     on_press:
       then:
-        - number.increment: humidite_cible
+        - number.increment: humidite_cible_maintien
         - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();
@@ -166,7 +176,7 @@ binary_sensor:
     name: "Bouton -"
     on_press:
       then:
-        - number.decrement: humidite_cible
+        - number.decrement: humidite_cible_maintien
         - script.execute: gestion_chauffage
         - lambda: |-
             id(ecran_oled).update();
