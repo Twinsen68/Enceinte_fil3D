@@ -23,7 +23,7 @@ ota:
 
 api:
 logger:
-  level: WARN
+  level: INFO
 
 # Définition du bus I2C (utilisé pour OLED)
 i2c:
@@ -39,9 +39,21 @@ sensor:
     temperature:
       name: "Température"
       id: temperature
+      on_value:
+        then:
+          - script.execute: gestion_chauffage
+          - lambda: |-
+              id(ecran_oled).update();
+          - logger.log: "Mise à jour forcée après lecture température DHT."
     humidity:
       name: "Humidité"
       id: humidity
+      on_value:
+        then:
+          - script.execute: gestion_chauffage
+          - lambda: |-
+              id(ecran_oled).update();
+          - logger.log: "Mise à jour forcée après lecture humidité DHT."
     update_interval: 10s
 
 output:
