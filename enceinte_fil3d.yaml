@@ -316,14 +316,26 @@ binary_sensor:
         - lambda: |-
             const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
             if (id(mode_fonctionnement).state == "Test") {
-              // En mode Test, bouton + incrémente puissance_test de 10% max 100%
               float current = id(puissance_test).state;
               current += 10;
               if (current > 100) current = 100;
               id(puissance_test).publish_state(current);
               ESP_LOGD("bouton_plus", "Puissance Test incrémentée à %.0f%%", current);
+            } else if (id(mode_fonctionnement).state == "Off") {
+              auto it = std::find(filaments.begin(), filaments.end(), id(filament).state);
+              if (it != filaments.end()) {
+                ++it;
+                if (it == filaments.end()) it = filaments.begin();
+                id(filament).publish_state(*it);
+                float temp_cible = 40.0f;
+                if (*it == "PLA") temp_cible = 40.0f;
+                else if (*it == "PETG") temp_cible = 60.0f;
+                else if (*it == "ABS") temp_cible = 75.0f;
+                else if (*it == "Nylon") temp_cible = 75.0f;
+                id(temperature_cible).publish_state(temp_cible);
+                ESP_LOGI("bouton_plus", "Filament changé vers %s, température cible %.0f°C", it->c_str(), temp_cible);
+              }
             } else {
-              // En mode Maintien ou Séchage, bouton + incrémente humidite_cible_maintien max 50%
               id(humidite_cible_maintien).publish_state(std::min(id(humidite_cible_maintien).state + 1, 50.0f));
             }
         - script.execute: gestion_chauffage
@@ -343,14 +355,26 @@ binary_sensor:
         - lambda: |-
             const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
             if (id(mode_fonctionnement).state == "Test") {
-              // En mode Test, bouton - décrémente puissance_test de 10% min 0%
               float current = id(puissance_test).state;
               current -= 10;
               if (current < 0) current = 0;
               id(puissance_test).publish_state(current);
               ESP_LOGD("bouton_moins", "Puissance Test décrémentée à %.0f%%", current);
+            } else if (id(mode_fonctionnement).state == "Off") {
+              auto it = std::find(filaments.begin(), filaments.end(), id(filament).state);
+              if (it != filaments.end()) {
+                if (it == filaments.begin()) it = filaments.end();
+                --it;
+                id(filament).publish_state(*it);
+                float temp_cible = 40.0f;
+                if (*it == "PLA") temp_cible = 40.0f;
+                else if (*it == "PETG") temp_cible = 60.0f;
+                else if (*it == "ABS") temp_cible = 75.0f;
+                else if (*it == "Nylon") temp_cible = 75.0f;
+                id(temperature_cible).publish_state(temp_cible);
+                ESP_LOGI("bouton_moins", "Filament changé vers %s, température cible %.0f°C", it->c_str(), temp_cible);
+              }
             } else {
-              // En mode Maintien ou Séchage, bouton - décrémente humidite_cible_maintien min 10%
               id(humidite_cible_maintien).publish_state(std::max(id(humidite_cible_maintien).state - 1, 10.0f));
             }
         - script.execute: gestion_chauffage
