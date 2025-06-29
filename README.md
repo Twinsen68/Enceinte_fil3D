@@ -1,215 +1,197 @@
-substitutions:
-  - old: |-
-      - platform: template
-        name: "Filament"
-        id: filament
-        icon: "mdi:printer-3d"
-        lambda: |-
-          if (id(mode) == 0) return "PLA";
-          else if (id(mode) == 1) return "PETG";
-          else if (id(mode) == 2) return "ABS";
-          else if (id(mode) == 3) return "Nylon";
-          else return "N/A";
-  - new: |-
-      # Define filament index (0=PLA,1=PETG,2=ABS,3=Nylon)
-      globals:
-        - id: filament_index
-          type: int
-          restore_value: true
-          initial_value: '0'
+# 🔥 Enceinte de stockage de filament avec chauffage intelligent
 
-      # Define manual power for test mode (0-100%)
-        - id: puissance_test
-          type: int
-          restore_value: true
-          initial_value: '0'
+## 📌 Introduction
+Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faible humidité** grâce à un **chauffage intelligent** contrôlé par **ESPHome**.
 
-      # Filament name template sensor for display
-      text_sensor:
-        - platform: template
-          name: "Filament"
-          id: filament
-          icon: "mdi:printer-3d"
-          lambda: |-
-            switch (id(filament_index)) {
-              case 0: return {"PLA"};
-              case 1: return {"PETG"};
-              case 2: return {"ABS"};
-              case 3: return {"Nylon"};
-              default: return {"N/A"};
-            }
-binary_sensor:
-  # Buttons already defined here; add actions below
+### **Fonctionnalités principales**
+- **Mode maintien** : Maintient l'humidité sous un seuil défini.
+- **Mode séchage approfondi** : Assèche intensément les filaments et le dessicant.
+- **Régulation intelligente de la chauffe** (PWM progressif selon l'humidité).
+- **Affichage OLED avec veille automatique** après 10 minutes d’inactivité.
+- **Réglage de la durée du séchage approfondi** (1 à 8 heures).
+- **Contrôle via boutons physiques et Home Assistant**.
+- **Sélection du type de filament via les boutons physiques uniquement en mode Off.**
+- **Régulation PID selon le type de filament choisi (température cible adaptée).**
+- **Mode Test manuel pour contrôler la puissance PWM de chauffe (`puissance_test`).**
+- **Switch "Test PWM MOSFET" disponible dans Home Assistant pour verifier le pilotage du chauffage.**
 
-script:
-  - id: gestion_chauffage
-    then:
-      - lambda: |-
-          // Determine target temperature based on filament_index
-          float target_temp = 0.0;
-          switch (id(filament_index)) {
-            case 0: target_temp = 42.5; break; // PLA 40-45°C average
-            case 1: target_temp = 55.0; break; // PETG approx 55°C (assumed)
-            case 2: target_temp = 70.0; break; // ABS 65-75°C average
-            case 3: target_temp = 75.0; break; // Nylon 70-80°C average
-            default: target_temp = 40.0;
-          }
-          id(target_temperature) = target_temp;
+**⚙ Compatible avec Home Assistant** via ESPHome pour une gestion domotique complète.
 
-          // Now apply heating logic depending on mode
-          if (id(mode) == 2) { // Test mode: use puissance_test
-            if (id(puissance_test) > 0) {
-              id(chauffage_pwm).set_level((float)id(puissance_test) / 100.0);
-              id(chauffage_on) = true;
-            } else {
-              id(chauffage_pwm).set_level(0);
-              id(chauffage_on) = false;
-            }
-          } else if (id(mode) == 0) { // Maintien mode
-            if (id(humidity) > id(humidity_threshold) + 10) {
-              id(chauffage_pwm).set_level(1.0);
-              id(chauffage_on) = true;
-            } else if (id(humidity) > id(humidity_threshold) + 5) {
-              id(chauffage_pwm).set_level(0.5);
-              id(chauffage_on) = true;
-            } else if (id(humidity) > id(humidity_threshold)) {
-              id(chauffage_pwm).set_level(0.3);
-              id(chauffage_on) = true;
-            } else {
-              id(chauffage_pwm).set_level(0);
-              id(chauffage_on) = false;
-            }
-          } else if (id(mode) == 1) { // Séchage approfondi
-            id(chauffage_pwm).set_level(1.0);
-            id(chauffage_on) = true;
-          } else {
-            id(chauffage_pwm).set_level(0);
-            id(chauffage_on) = false;
-          }
+---
 
-binary_sensor:
-  - platform: gpio
-    id: bouton_plus
-    pin:
-      number: GPIO26
-      mode: INPUT_PULLUP
-      inverted: true
-    on_press:
-      then:
-        - lambda: |-
-            if (id(mode) == 2) { // Test mode
-              // Increase puissance_test by 10%, max 100%
-              if (id(puissance_test) < 100) {
-                id(puissance_test) += 10;
-              }
-            } else {
-              // In other modes, increase humidity threshold by 1
-              id(humidity_threshold) += 1;
-            }
-        - script.execute: gestion_chauffage
+## 🎛️ Modes de fonctionnement
 
-  - platform: gpio
-    id: bouton_moins
-    pin:
-      number: GPIO13
-      mode: INPUT_PULLUP
-      inverted: true
-    on_press:
-      then:
-        - lambda: |-
-            if (id(mode) == 2) { // Test mode
-              // Decrease puissance_test by 10%, min 0%
-              if (id(puissance_test) > 0) {
-                id(puissance_test) -= 10;
-              }
-            } else {
-              // In other modes, decrease humidity threshold by 1
-              id(humidity_threshold) -= 1;
-            }
-        - script.execute: gestion_chauffage
+### **1️⃣ Mode "Maintien de l'humidité"**
+➡ **Objectif** : Garder l’humidité sous un seuil défini en activant le chauffage modérément.  
+✅ Idéal pour **stocker les filaments sans les abîmer**.
 
-  - platform: gpio
-    id: bouton_mode
-    pin:
-      number: GPIO27
-      mode: INPUT_PULLUP
-      inverted: true
-    on_press:
-      then:
-        - lambda: |-
-            id(mode) = (id(mode) + 1) % 3; // Cycle modes 0,1,2
-        - script.execute: gestion_chauffage
+- **Si l'humidité est supérieure au seuil +10%** → Chauffage à **100%**
+- **Si l'humidité est supérieure au seuil +5%** → Chauffage à **50%**
+- **Si l'humidité dépasse légèrement le seuil** → Chauffage à **30%**
+- **Si l'humidité est sous le seuil** → Chauffage **éteint**
 
-  # Additional buttons to cycle filament type in Test mode (simulate long press or double press)
-  - platform: gpio
-    id: bouton_plus_long
-    pin:
-      number: GPIO14
-      mode: INPUT_PULLUP
-      inverted: true
-    on_press:
-      then:
-        - lambda: |-
-            if (id(mode) == 2) { // Test mode
-              // Cycle filament index +1 modulo 4
-              id(filament_index) = (id(filament_index) + 1) % 4;
-              // Update target_temperature immediately
-              float target_temp = 0.0;
-              switch (id(filament_index)) {
-                case 0: target_temp = 42.5; break;
-                case 1: target_temp = 55.0; break;
-                case 2: target_temp = 70.0; break;
-                case 3: target_temp = 75.0; break;
-                default: target_temp = 40.0;
-              }
-              id(target_temperature) = target_temp;
-            }
-        - script.execute: gestion_chauffage
+⚡ En fonction du filament choisi (PLA, PETG, ABS, Nylon), la température cible de maintien est automatiquement ajustée pour optimiser la conservation.
+⚡ La puissance de chauffe est régulée de manière progressive via un contrôle PID selon l'écart avec la température cible.
+### **4️⃣ Mode Test**
+➡ **Objectif** : Permettre de tester manuellement le chauffage PWM.
 
-  - platform: gpio
-    id: bouton_moins_long
-    pin:
-      number: GPIO15
-      mode: INPUT_PULLUP
-      inverted: true
-    on_press:
-      then:
-        - lambda: |-
-            if (id(mode) == 2) { // Test mode
-              // Cycle filament index -1 modulo 4
-              id(filament_index) = (id(filament_index) + 3) % 4;
-              // Update target_temperature immediately
-              float target_temp = 0.0;
-              switch (id(filament_index)) {
-                case 0: target_temp = 42.5; break;
-                case 1: target_temp = 55.0; break;
-                case 2: target_temp = 70.0; break;
-                case 3: target_temp = 75.0; break;
-                default: target_temp = 40.0;
-              }
-              id(target_temperature) = target_temp;
-            }
-        - script.execute: gestion_chauffage
+- **Réglez manuellement la puissance PWM entre 0% et 100% via les boutons + et -.**
+- **Idéal pour tester le MOSFET ou le chauffage sans attendre une condition d'humidité/température.**
+- **L'écran OLED affichera 'Chauffage: ON XX%' selon le réglage manuel.**
 
-display:
-  - platform: ssd1306_i2c
-    id: oled_display
-    address: 0x3C
-    lambda: |-
-      it.printf(0, 0, id(font), "Mode: %s", id(mode) == 0 ? "Maintien" : id(mode) == 1 ? "Séchage" : "Test");
-      it.printf(0, 10, id(font), "Temp: %.1fC", id(temperature));
-      it.printf(0, 20, id(font), "Hum: %.1f%%", id(humidity));
-      it.printf(0, 30, id(font), "T Cible: %.1fC", id(target_temperature));
+---
 
-      if (id(mode) == 2) { // Test mode
-        it.printf(0, 40, id(font), "Puissance: %d%%", id(puissance_test));
-      } else {
-        // Show heating line with ON/OFF and PWM level
-        if (id(chauffage_on)) {
-          it.printf(0, 40, id(font), "Chauffage: ON %d%%", (int)(id(chauffage_pwm).get_level() * 100));
-        } else {
-          it.printf(0, 40, id(font), "Chauffage: OFF 0%%");
-        }
-      }
+### **2️⃣ Mode "Séchage approfondi"**
+➡ **Objectif** : Séchage intensif des filaments et du dessicant sur une durée personnalisée.  
+✅ Idéal après **une ouverture de l’enceinte** ou lorsque l’humidité est trop élevée.
 
-# End of substitutions
+**Température recommandée par type de filament** :
+- **PLA** : 40-45°C (4 heures)
+- **ABS** : 65-75°C (4 heures)
+- **Nylon** : 70-80°C (4 heures)
+
+💡 **La durée est réglable de 1h à 8h via Home Assistant**.  
+⌛ **Une fois terminé, l’enceinte repasse automatiquement en mode Maintien**.
+
+---
+
+## 📺 Affichage OLED
+L’écran affiche en permanence :
+
+Mode: Off / Test / Maintien / Séchage
+Temp: XX.X°C
+Humidité: XX.X%
+Cible: XX.X%
+
+💡 Affichage dynamique du type de filament sélectionné dans tous les modes.
+💡 En mode Off, les boutons + et - permettent de sélectionner le type de filament à l'écran directement.
+💡 En mode Test, affichage de la puissance de chauffe manuelle réglée.
+💡 En modes Maintien ou Séchage, l'écran indique la puissance réelle du chauffage.
+
+✅ **Extinction automatique après 10 minutes d’inactivité**.  
+✅ **Rallumage dès qu’un bouton est pressé**.
+
+---
+
+## 🎛️ Boutons de contrôle
+
+L’enceinte dispose de **trois boutons physiques** pour ajuster les paramètres et changer de mode.
+
+- **En mode Off** : les boutons + et - changent le filament affiché et sélectionné.
+- **En mode Test** : les boutons + et - modifient directement la puissance PWM de chauffe.
+- **En mode Maintien ou Séchage** : les boutons + et - ajustent l'humidité cible.
+- **Bouton Mode** : cycle entre Off, Test, Maintien, Séchage approfondi.
+
+---
+
+# 🛠️ Installation et Déploiement ESPHome
+
+## 1️⃣ Matériel requis
+- **ESP32 DevKit V1**
+- **Capteur d’humidité et température DHT20**
+- **Écran OLED SSD1306**
+- **MOSFET pour le chauffage**
+- **Chauffage 12V ou 24V (selon ton installation)**
+- **Boutons poussoirs pour le contrôle physique**
+- **Alimentation 5V pour l’ESP32**
+
+---
+
+## 2️⃣ Installation avec ESPHome
+
+### 📥 **Méthode simple : copier `install.yaml`**
+
+ESPHome permet d’inclure la configuration directement depuis **GitHub**.  
+➡ **Copiez ce fichier dans ESPHome** :
+
+```yaml
+esp32:  
+  board: esp32dev  # Spécifie le modèle de la carte ESP32 (ESP32 DevKit V1 ici).
+  framework:
+    type: arduino  # Utilisation du framework Arduino, largement compatible avec ESPHome.
+
+packages:  # Inclusion d'une configuration externe pour modularité et réutilisation.
+  twinsen68.enceinte_fil3d:  # Nom du package inclus.
+    url: https://github.com/Twinsen68/Enceinte_fil3D  # Lien vers le dépôt GitHub contenant la configuration de l’enceinte.
+    file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
+    ref: v1.0.0  # Version spécifique du fichier à utiliser.
+
+esphome:  
+  name: enceinte_fil3d
+  name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
+  friendly_name: "Enceinte filament 3D contrôlée"
+
+api:  # Active l’API ESPHome pour la communication avec Home Assistant.
+  encryption:
+    key: tsHqLo48mLGhWo/qQQrZUFdsEwuZcC1/BlUOXWExy14=  # Clé de chiffrement pour sécuriser les échanges.
+
+wifi:
+  ssid: !secret wifi_ssid  # Nom du réseau Wi-Fi
+  password: !secret wifi_password  # Mot de passe du Wi-Fi
+  ```
+
+## 3️⃣ Déploiement dans ESPHome
+
+1. **Ouvrez ESPHome dans Home Assistant**.
+2. **Ajoutez un nouvel appareil** et copiez-collez `install.yaml`.
+3. **Flashez l’ESP32 via USB** pour la première installation.
+4. **Le module se connectera au Wi-Fi et sera visible dans Home Assistant**.
+5. **Accédez aux contrôles directement depuis Home Assistant**.
+
+---
+
+## 🔄 Mise à jour du cache ESPHome
+
+Si vous modifiez le fichier `enceinte_fil3D.yaml` et que les changements ne sont pas pris en compte, il est nécessaire de forcer la mise à jour du cache d'ESPHome.  
+Pour cela, il suffit de modifier la version du fichier dans `install.yaml` :
+
+**Dans `install.yaml`, remplace :**
+```yaml
+ref: v1.0.0
+```
+**Par une nouvelle version :**
+```yaml
+ref: v1.0.1
+```
+
+Ensuite, **redémarrez ESPHome et rechargez la configuration** pour que les mises à jour soient bien prises en compte.
+
+---
+
+# ❓ Dépannage
+
+- **Le type de filament affiché ne change pas** : assurez-vous d'être en mode Off pour le sélectionner avec les boutons + et -.
+- **Le chauffage ne s'allume pas en mode Test** : vérifiez que la puissance PWM réglée est supérieure à 0%.
+- **Le chauffage ne s'allume pas** : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
+- **L'écran OLED n'affiche rien** : Vérifiez qu’il est bien alimenté et connecté à SDA/SCL.
+- **Le module ne se connecte pas au WiFi** : Vérifiez le SSID et le mot de passe dans ESPHome.
+
+---
+
+# 🎯 Conclusion
+
+Tu as maintenant une **enceinte totalement autonome et intelligente** pour stocker tes **filaments 3D** dans **les meilleures conditions**.  
+🔥 **Profite d’une meilleure qualité d’impression et d’un stockage sans humidité !**  
+
+✨ Désormais, ton enceinte de filament est capable de gérer automatiquement la température de maintien en fonction du filament choisi et permet un contrôle manuel complet en mode Test.
+
+Besoin d’améliorations ? **Ouvre une issue sur GitHub** ou demande des conseils ! 🚀😊
+
+---
+
+## 📎 Liens utiles
+
+- [ESPHome Documentation](https://esphome.io/)
+- [Home Assistant](https://www.home-assistant.io/)
+- [GitHub du projet](https://github.com/Twinsen68/Enceinte_fil3D)
+
+---
+
+**🔧 Contributeurs** : @Twinsen68  
+**💡 Licence** : MIT  
+
+---
+
+# 🚀 Prêt à l’utiliser ?
+
+Télécharge **ESPHome**, flashe ton **ESP32**, et **commence à sécher tes filaments !** 😃🔥
