@@ -170,19 +170,18 @@ i2c:
 #         - lambda: |-
 #             id(ecran_oled).update();
 
-display:
-  - platform: ssd1306_i2c
-    model: "SSD1306_128x64"
-    address: 0x3D
-    id: ecran_oled
-    lambda: |-
-      it.printf(0, 0, id(my_font), "Mode: %s", "Test");
-      it.printf(0, 20, id(my_font), "Temp: %.1f°C", 0.0);
-      it.printf(0, 40, id(my_font), "Humidité: %.1f%%", 0.0);
-      it.printf(0, 60, id(my_font), "Cible: %.1f%%", 0.0);
-    update_interval: 5s
-
 font:
   - file: "gfonts://Roboto"
     id: my_font
     size: 12
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306_128x64"
+    address: 0x3C
+    id: ecran_oled
+    lambda: |-
+      it.print(0, 0, id(my_font), "OLED OK");
+      it.print(0, 15, id(my_font), "ESPHome actif");
+      it.print(0, 30, id(my_font), "Test affichage");
+    update_interval: 2s
