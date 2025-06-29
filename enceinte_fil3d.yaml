@@ -185,3 +185,32 @@ display:
       it.print(0, 15, id(my_font), "ESPHome actif");
       it.print(0, 30, id(my_font), "Test affichage");
     update_interval: 2s
+
+# Test fonctionnel des boutons physiques
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: 26
+      mode: INPUT_PULLUP
+    name: "Test Bouton +"
+    on_press:
+      then:
+        - logger.log: "Le bouton + a été pressé."
+
+  - platform: gpio
+    pin:
+      number: 13
+      mode: INPUT_PULLUP
+    name: "Test Bouton -"
+    on_press:
+      then:
+        - logger.log: "Le bouton - a été pressé."
+
+  - platform: gpio
+    pin:
+      number: 27
+      mode: INPUT_PULLUP
+    name: "Test Bouton Mode"
+    on_press:
+      then:
+        - logger.log: "Le bouton Mode a été pressé."
