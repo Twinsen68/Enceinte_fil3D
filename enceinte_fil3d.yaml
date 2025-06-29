@@ -5,6 +5,13 @@ esphome:
     priority: 600
     then:
       - logger.log: "Démarrage de l'enceinte à filament..."
+      - delay: 2s
+      - lambda: |-
+          if (id(ecran_oled) != nullptr) {
+            id(ecran_oled).update();
+          } else {
+            ESP_LOGW("boot", "OLED non initialisé lors du boot, update ignoré");
+          }
 
 esp32:
   board: esp32dev
@@ -43,7 +50,9 @@ sensor:
         then:
           - script.execute: gestion_chauffage
           - lambda: |-
-              id(ecran_oled).update();
+              if (id(ecran_oled) != nullptr) {
+                id(ecran_oled).update();
+              }
           - logger.log: "Mise à jour forcée après lecture température DHT."
     humidity:
       name: "Humidité"
@@ -52,7 +61,9 @@ sensor:
         then:
           - script.execute: gestion_chauffage
           - lambda: |-
-              id(ecran_oled).update();
+              if (id(ecran_oled) != nullptr) {
+                id(ecran_oled).update();
+              }
           - logger.log: "Mise à jour forcée après lecture humidité DHT."
     update_interval: 10s
 
@@ -152,7 +163,9 @@ select:
             ESP_LOGI("filament", "Filament sélectionné: %s, Température cible ajustée à %.1f°C.", id(filament).state.c_str(), temp_cible_filament);
             // Forcer mise à jour chauffage après changement filament
             id(gestion_chauffage).execute();
-            id(ecran_oled).update();
+            if (id(ecran_oled) != nullptr) {
+              id(ecran_oled).update();
+            }
 
 script:
   - id: gestion_chauffage
@@ -236,6 +249,9 @@ display:
     model: "SSD1306_128x64"
     address: 0x3C
     id: ecran_oled
+    on_error:
+      then:
+        - logger.log: "Erreur de communication avec l'écran OLED, tentative de récupération en cours..."
     lambda: |-
       char buffer[32];
       snprintf(buffer, sizeof(buffer), "Mode: %s", id(mode_fonctionnement).state.c_str());
@@ -314,7 +330,9 @@ binary_sensor:
             }
         - script.execute: gestion_chauffage
         - lambda: |-
-            id(ecran_oled).update();
+            if (id(ecran_oled) != nullptr) {
+              id(ecran_oled).update();
+            }
         - logger.log: "Humidité cible incrémentée ou puissance test modifiée."
 
   - platform: gpio
@@ -339,7 +357,9 @@ binary_sensor:
             }
         - script.execute: gestion_chauffage
         - lambda: |-
-            id(ecran_oled).update();
+            if (id(ecran_oled) != nullptr) {
+              id(ecran_oled).update();
+            }
         - logger.log: "Humidité cible décrémentée ou puissance test modifiée."
 
   - platform: gpio
@@ -361,7 +381,9 @@ binary_sensor:
             }
         - script.execute: gestion_chauffage
         - lambda: |-
-            id(ecran_oled).update();
+            if (id(ecran_oled) != nullptr) {
+              id(ecran_oled).update();
+            }
         - logger.log: "Mode de fonctionnement ou filament changé via bouton."
 
 switch:
