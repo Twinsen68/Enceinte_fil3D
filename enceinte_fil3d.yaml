@@ -185,8 +185,8 @@ script:
           // Mettre à jour le filament courant si en mode Test
           if (id(mode_fonctionnement).state == "Test") {
             current_filament = id(filament).state;
-          } else {
-            // Appliquer la température cible selon filament courant même hors mode Test
+          } else if (id(mode_fonctionnement).state != "Off") {
+            // Appliquer la température cible selon filament courant uniquement si non Off
             if (current_filament == "PLA") {
               temp_cible = 40.0f;
             } else if (current_filament == "PETG") {
