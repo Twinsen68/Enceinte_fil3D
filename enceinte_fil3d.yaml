@@ -32,6 +32,12 @@ api:
 logger:
   level: INFO
 
+globals:
+  - id: temps_restant_sechage
+    type: int
+    restore_value: no
+    initial_value: '0'
+
 # Définition du bus I2C (utilisé pour OLED)
 i2c:
   sda: 21
@@ -93,10 +99,10 @@ number:
     name: "Humidité cible Séchage"
     id: humidite_cible_sechage
     optimistic: true
-    min_value: 10
+    min_value: 5
     max_value: 50
     step: 1
-    initial_value: 20
+    initial_value: 10
 
   - platform: template
     name: "Durée du séchage"
@@ -139,28 +145,48 @@ select:
       then:
         - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
         - script.execute: gestion_chauffage
+        - if:
+            condition:
+              lambda: 'return id(mode_fonctionnement).state == "Séchage approfondi";'
+            then:
+              - script.execute: timer_sechage
+            else:
+              - lambda: |-
+                  id(temps_restant_sechage) = 0;
 
   - platform: template
     name: "Filament"
     id: filament
     optimistic: true
-    options: ["PLA", "PETG", "ABS", "Nylon"]
+    options: ["PLA", "PETG", "ABS", "Nylon", "TPU", "PC"]
     initial_option: "PLA"
     on_value:
       then:
         - delay: 500ms
         - lambda: |-
             float temp_cible_filament = 40.0f;
+            int duree_defaut = 4;
             if (id(filament).state == "PLA") {
-              temp_cible_filament = 40.0f;
+              temp_cible_filament = 45.0f;
+              duree_defaut = 4;
             } else if (id(filament).state == "PETG") {
               temp_cible_filament = 60.0f;
+              duree_defaut = 5;
             } else if (id(filament).state == "ABS") {
-              temp_cible_filament = 75.0f;
+              temp_cible_filament = 70.0f;
+              duree_defaut = 3;
             } else if (id(filament).state == "Nylon") {
               temp_cible_filament = 75.0f;
+              duree_defaut = 8;
+            } else if (id(filament).state == "TPU") {
+              temp_cible_filament = 50.0f;
+              duree_defaut = 5;
+            } else if (id(filament).state == "PC") {
+              temp_cible_filament = 85.0f;
+              duree_defaut = 7;
             }
             id(temperature_cible).publish_state(temp_cible_filament);
+            id(duree_sechage).publish_state(duree_defaut);
             ESP_LOGI("filament", "Filament sélectionné: %s, Température cible ajustée à %.1f°C.", id(filament).state.c_str(), temp_cible_filament);
             // Forcer mise à jour chauffage après changement filament
             id(gestion_chauffage).execute();
@@ -188,13 +214,17 @@ script:
           } else if (id(mode_fonctionnement).state != "Off") {
             // Appliquer la température cible selon filament courant uniquement si non Off
             if (current_filament == "PLA") {
-              temp_cible = 40.0f;
+              temp_cible = 45.0f;
             } else if (current_filament == "PETG") {
               temp_cible = 60.0f;
             } else if (current_filament == "ABS") {
-              temp_cible = 75.0f;
+              temp_cible = 70.0f;
             } else if (current_filament == "Nylon") {
               temp_cible = 75.0f;
+            } else if (current_filament == "TPU") {
+              temp_cible = 50.0f;
+            } else if (current_filament == "PC") {
+              temp_cible = 85.0f;
             }
             id(temperature_cible).publish_state(temp_cible);
           }
@@ -239,6 +269,25 @@ script:
                    id(mode_fonctionnement).state.c_str(), temperature_actuelle, temp_cible, puissance * 100.0f);
           id(chauffage_dimmable).make_call().set_brightness(puissance).perform();
 
+  - id: timer_sechage
+    mode: restart
+    then:
+      - lambda: |-
+          id(temps_restant_sechage) = (int)(id(duree_sechage).state * 60);
+      - while:
+          condition:
+            lambda: 'return id(temps_restant_sechage) > 0 && id(mode_fonctionnement).state == "Séchage approfondi";'
+          then:
+            - delay: 60s
+            - lambda: |-
+                id(temps_restant_sechage) -= 1;
+                ESP_LOGD("timer_sechage", "Temps restant %d min", id(temps_restant_sechage));
+                if (id(ecran_oled) != nullptr) { id(ecran_oled).update(); }
+      - lambda: |-
+          if (id(mode_fonctionnement).state == "Séchage approfondi") {
+            id(mode_fonctionnement).publish_state("Maintien");
+          }
+
 font:
   - file: "gfonts://Roboto"
     id: my_font
@@ -271,10 +320,13 @@ display:
       if (id(mode_fonctionnement).state == "Test") {
         snprintf(buffer, sizeof(buffer), "Puissance: %.0f%%", id(puissance_test).state);
         it.print(0, 39, id(my_font), buffer);
-      } else if (id(mode_fonctionnement).state == "Maintien" || id(mode_fonctionnement).state == "Séchage approfondi") {
+      } else if (id(mode_fonctionnement).state == "Maintien") {
         float pwm_pct = id(chauffage_dimmable).current_values.get_brightness() * 100.0f;
         bool chauffe_on = (pwm_pct > 0.0f);
         snprintf(buffer, sizeof(buffer), "Chauffage: %s %.0f%%", chauffe_on ? "ON" : "OFF", chauffe_on ? pwm_pct : 0.0f);
+        it.print(0, 39, id(my_font), buffer);
+      } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+        snprintf(buffer, sizeof(buffer), "Reste: %02dh%02dm", id(temps_restant_sechage)/60, id(temps_restant_sechage)%60);
         it.print(0, 39, id(my_font), buffer);
       } else {
         snprintf(buffer, sizeof(buffer), "Filament: %s", id(filament).state.c_str());
@@ -320,7 +372,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
-            const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
+            const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon", "TPU", "PC"};
             if (id(mode_fonctionnement).state == "Test") {
               // En mode Test, bouton + incrémente puissance_test de 10% max 100%
               float current = id(puissance_test).state;
@@ -338,17 +390,29 @@ binary_sensor:
                   it = filaments.begin();
                 }
                 id(filament).publish_state(*it);
-                float temp_cible_filament = 40.0f;
+                float temp_cible_filament = 45.0f;
+                int duree_defaut = 4;
                 if (*it == "PLA") {
-                  temp_cible_filament = 40.0f;
+                  temp_cible_filament = 45.0f;
+                  duree_defaut = 4;
                 } else if (*it == "PETG") {
                   temp_cible_filament = 60.0f;
+                  duree_defaut = 5;
                 } else if (*it == "ABS") {
-                  temp_cible_filament = 75.0f;
+                  temp_cible_filament = 70.0f;
+                  duree_defaut = 3;
                 } else if (*it == "Nylon") {
                   temp_cible_filament = 75.0f;
+                  duree_defaut = 8;
+                } else if (*it == "TPU") {
+                  temp_cible_filament = 50.0f;
+                  duree_defaut = 5;
+                } else if (*it == "PC") {
+                  temp_cible_filament = 85.0f;
+                  duree_defaut = 7;
                 }
                 id(temperature_cible).publish_state(temp_cible_filament);
+                id(duree_sechage).publish_state(duree_defaut);
                 if (id(ecran_oled) != nullptr) {
                   id(ecran_oled).update();
                 }
@@ -377,7 +441,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
-            const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon"};
+            const std::vector<std::string> filaments = {"PLA", "PETG", "ABS", "Nylon", "TPU", "PC"};
             if (id(mode_fonctionnement).state == "Test") {
               // En mode Test, bouton - décrémente puissance_test de 10% min 0%
               float current = id(puissance_test).state;
@@ -395,17 +459,29 @@ binary_sensor:
                 }
                 --it;
                 id(filament).publish_state(*it);
-                float temp_cible_filament = 40.0f;
+                float temp_cible_filament = 45.0f;
+                int duree_defaut = 4;
                 if (*it == "PLA") {
-                  temp_cible_filament = 40.0f;
+                  temp_cible_filament = 45.0f;
+                  duree_defaut = 4;
                 } else if (*it == "PETG") {
                   temp_cible_filament = 60.0f;
+                  duree_defaut = 5;
                 } else if (*it == "ABS") {
-                  temp_cible_filament = 75.0f;
+                  temp_cible_filament = 70.0f;
+                  duree_defaut = 3;
                 } else if (*it == "Nylon") {
                   temp_cible_filament = 75.0f;
+                  duree_defaut = 8;
+                } else if (*it == "TPU") {
+                  temp_cible_filament = 50.0f;
+                  duree_defaut = 5;
+                } else if (*it == "PC") {
+                  temp_cible_filament = 85.0f;
+                  duree_defaut = 7;
                 }
                 id(temperature_cible).publish_state(temp_cible_filament);
+                id(duree_sechage).publish_state(duree_defaut);
                 if (id(ecran_oled) != nullptr) {
                   id(ecran_oled).update();
                 }
