@@ -193,3 +193,16 @@ binary_sensor:
         - lambda: |-
             id(ecran_oled).update();
         - logger.log: "Mode de fonctionnement changé via bouton."
+switch:
+  - platform: template
+    name: "Test PWM MOSFET"
+    id: test_pwm_mosfet
+    turn_on_action:
+      - light.turn_on:
+          id: chauffage_dimmable
+          brightness: 100%
+      - logger.log: "Test PWM MOSFET ON"
+    turn_off_action:
+      - light.turn_off:
+          id: chauffage_dimmable
+      - logger.log: "Test PWM MOSFET OFF"
