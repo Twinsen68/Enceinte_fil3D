@@ -200,11 +200,8 @@ display:
         chauffe_on = false;
         pwm_pct = 0.0f;
       } else if (id(mode_fonctionnement).state == "Test") {
-        if (pwm_pct > 0.0f) {
-          chauffe_on = true;
-        } else {
-          chauffe_on = false;
-        }
+        pwm_pct = id(puissance_test).state;
+        chauffe_on = (pwm_pct > 0.0f);
       } else {
         if (pwm_pct > 0.0f) {
           chauffe_on = true;
