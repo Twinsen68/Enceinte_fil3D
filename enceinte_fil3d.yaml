@@ -137,14 +137,14 @@ display:
       snprintf(buffer, sizeof(buffer), "Mode: %s", id(mode_fonctionnement).state.c_str());
       it.print(0, 0, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Temp: %.1f C", id(temperature).state);
-      it.print(0, 15, id(my_font), buffer);
+      it.print(0, 12, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Hum: %.1f %%", id(humidity).state);
-      it.print(0, 30, id(my_font), buffer);
+      it.print(0, 24, id(my_font), buffer);
       snprintf(buffer, sizeof(buffer), "Cible: %.0f %%", id(humidite_cible).state);
-      it.print(0, 45, id(my_font), buffer);
+      it.print(0, 36, id(my_font), buffer);
       float brightness = id(chauffage_dimmable).current_values.get_brightness();
       snprintf(buffer, sizeof(buffer), "Chauffage: %.0f %%", brightness * 100.0);
-      it.print(0, 60, id(my_font), buffer);
+      it.print(0, 48, id(my_font), buffer);
     update_interval: 2s
 
 binary_sensor:
