@@ -10,6 +10,9 @@ Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faibl
 - **Affichage OLED avec veille automatique** après 10 minutes d’inactivité.
 - **Réglage de la durée du séchage approfondi** (1 à 8 heures).
 - **Contrôle via boutons physiques et Home Assistant**.
+- **Sélection du type de filament directement via les boutons physiques en mode Off ou Maintien/Séchage**
+- **Régulation intelligente selon le type de filament choisi (température cible adaptée)**
+- **Mode Test manuel pour contrôler la puissance PWM de chauffe directement**
 
 **⚙ Compatible avec Home Assistant** via ESPHome pour une gestion domotique complète.
 
@@ -25,6 +28,15 @@ Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faibl
 - **Si l'humidité est supérieure au seuil +5%** → Chauffage à **50%**
 - **Si l'humidité dépasse légèrement le seuil** → Chauffage à **30%**
 - **Si l'humidité est sous le seuil** → Chauffage **éteint**
+
+⚡ En fonction du filament choisi (PLA, PETG, ABS, Nylon), la température cible de maintien est automatiquement ajustée pour optimiser la conservation.
+⚡ La puissance de chauffe est régulée de manière progressive via un contrôle PID selon l'écart avec la température cible.
+### **4️⃣ Mode Test**
+➡ **Objectif** : Permettre de tester manuellement le chauffage PWM.
+
+- **Réglez manuellement la puissance PWM entre 0% et 100% via les boutons + et -.**
+- **Idéal pour tester le MOSFET ou le chauffage sans attendre une condition d'humidité/température.**
+- **L'écran OLED affichera 'Chauffage: ON XX%' selon le réglage manuel.**
 
 ---
 
@@ -50,6 +62,10 @@ Temp: XX.X°C
 Humidité: XX.X%
 Cible: XX.X%
 
+💡 Affichage dynamique du type de filament sélectionné dans tous les modes.
+💡 En mode Off, les boutons + et - permettent de sélectionner le type de filament à l'écran directement.
+💡 En mode Test, affichage de la puissance de chauffe manuelle réglée.
+
 ✅ **Extinction automatique après 10 minutes d’inactivité**.  
 ✅ **Rallumage dès qu’un bouton est pressé**.
 
@@ -59,9 +75,10 @@ Cible: XX.X%
 
 L’enceinte dispose de **trois boutons physiques** pour ajuster les paramètres et changer de mode.
 
-- **Bouton +** (GPIO26) → Augmente le seuil d'humidité cible.
-- **Bouton -** (GPIO13) → Diminue le seuil d'humidité cible.
-- **Bouton Mode** (GPIO27) → Alterne entre **"Maintien" et "Séchage approfondi"**.
+- **En mode Off** : les boutons + et - changent le filament affiché et sélectionné.
+- **En mode Test** : les boutons + et - modifient directement la puissance PWM de chauffe.
+- **En mode Maintien ou Séchage** : les boutons + et - ajustent l'humidité cible.
+- **Bouton Mode** : cycle entre Off, Test, Maintien, Séchage approfondi.
 
 ---
 
@@ -141,6 +158,8 @@ Ensuite, **redémarrez ESPHome et rechargez la configuration** pour que les mise
 
 # ❓ Dépannage
 
+- **Le type de filament affiché ne change pas** : assurez-vous d'être en mode Off pour le sélectionner avec les boutons + et -.
+- **Le chauffage ne s'allume pas en mode Test** : vérifiez que la puissance PWM réglée est supérieure à 0%.
 - **Le chauffage ne s'allume pas** : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
 - **L'écran OLED n'affiche rien** : Vérifiez qu’il est bien alimenté et connecté à SDA/SCL.
 - **Le module ne se connecte pas au WiFi** : Vérifiez le SSID et le mot de passe dans ESPHome.
@@ -151,6 +170,8 @@ Ensuite, **redémarrez ESPHome et rechargez la configuration** pour que les mise
 
 Tu as maintenant une **enceinte totalement autonome et intelligente** pour stocker tes **filaments 3D** dans **les meilleures conditions**.  
 🔥 **Profite d’une meilleure qualité d’impression et d’un stockage sans humidité !**  
+
+✨ Désormais, ton enceinte de filament est capable de gérer automatiquement la température de maintien en fonction du filament choisi et permet un contrôle manuel complet en mode Test.
 
 Besoin d’améliorations ? **Ouvre une issue sur GitHub** ou demande des conseils ! 🚀😊
 
