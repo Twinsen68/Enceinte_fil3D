@@ -1,4 +1,4 @@
-e395e287c356bd3bb697b2a8b3720148cf09e6fc# 🔥 Enceinte de stockage de filament avec chauffage intelligent
+# 🔥 Enceinte de stockage de filament avec chauffage intelligent
 
 ## 📌 Introduction
 Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faible humidité** grâce à un **chauffage intelligent** contrôlé par **ESPHome**.
@@ -66,8 +66,23 @@ T Cible: XX°C / H Cible: XX%
 💡 En mode Off, les boutons + et - permettent de sélectionner le type de filament à l'écran directement.
 💡 En mode Test, affichage de la puissance de chauffe manuelle réglée.
 
-✅ **Extinction automatique après 10 minutes d’inactivité**.  
+✅ **Extinction automatique après 10 minutes d’inactivité**.
 ✅ **Rallumage dès qu’un bouton est pressé**.
+
+### Réglages visibles à l'écran selon le mode
+
+- **Mode Off**
+  - Affiche le matériau choisi (PLA, PETG, ABS, ...).
+  - Les boutons **+** et **-** font défiler les matériaux et mettent à jour la température cible par défaut.
+- **Mode Maintien**
+  - Affiche l'humidité actuelle et la température cible associée au matériau.
+  - Les boutons **+** et **-** modifient l'humidité de consigne affichée.
+- **Mode Séchage approfondi**
+  - Affiche le temps restant et la puissance de chauffe appliquée.
+  - Les boutons **+** et **-** ajustent l'humidité cible pour le séchage.
+- **Mode Test**
+  - Affiche "Puissance" suivie du pourcentage de PWM appliqué au chauffage.
+  - Les boutons **+** et **-** font varier cette puissance manuellement.
 
 ---
 
@@ -92,6 +107,16 @@ L’enceinte dispose de **trois boutons physiques** pour ajuster les paramètres
 - **Chauffage 12V ou 24V (selon ton installation)**
 - **Boutons poussoirs pour le contrôle physique**
 - **Alimentation 5V pour l’ESP32**
+
+### 🔌 Schéma de câblage (GPIO)
+
+- **DHT20** → `GPIO4`
+- **MOSFET (PWM)** → `GPIO14`
+- **OLED SDA/SCL** → `GPIO21`/`GPIO22`
+- **Bouton +** → `GPIO26`
+- **Bouton -** → `GPIO13`
+- **Bouton Mode** → `GPIO27`
+- **Alimentation** : 5V pour l’ESP32 et 12/24V pour le chauffage
 
 ---
 
@@ -135,6 +160,25 @@ wifi:
 3. **Flashez l’ESP32 via USB** pour la première installation.
 4. **Le module se connectera au Wi-Fi et sera visible dans Home Assistant**.
 5. **Accédez aux contrôles directement depuis Home Assistant**.
+
+---
+
+## 🧰 Structure du dépôt
+
+- `enceinte_fil3D.yaml` : configuration principale de l'enceinte avec tout le code ESPHome.
+- `install.yaml` : fichier minimal à copier dans ESPHome pour importer la configuration.
+- `instructions compli terminal mac` : aide rapide pour installer ESPHome en local sur macOS.
+
+---
+
+## 📝 Personnalisation de la configuration
+
+- Modifie **`install.yaml`** pour renseigner ton `wifi_ssid` et `wifi_password`.
+- Dans **`enceinte_fil3D.yaml`**, ajuste si besoin :
+  - les valeurs d'**humidité cible** (`humidite_cible_maintien` et `humidite_cible_sechage`)
+  - la **durée de séchage par défaut** (`duree_sechage`)
+  - la **liste des filaments** disponibles dans le sélecteur `filament`
+  - la **température cible** selon ton propre matériel
 
 ---
 
