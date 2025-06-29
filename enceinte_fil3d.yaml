@@ -195,7 +195,24 @@ display:
       }
       it.print(0, 39, id(my_font), buffer);
       float pwm_pct = id(chauffage_dimmable).current_values.get_brightness() * 100.0f;
-      snprintf(buffer, sizeof(buffer), "Chauffage: %s %.0f%%", pwm_pct > 0.0f ? "ON" : "OFF", pwm_pct);
+      bool chauffe_on = false;
+      if (id(mode_fonctionnement).state == "Off") {
+        chauffe_on = false;
+        pwm_pct = 0.0f;
+      } else if (id(mode_fonctionnement).state == "Test") {
+        if (pwm_pct > 0.0f) {
+          chauffe_on = true;
+        } else {
+          chauffe_on = false;
+        }
+      } else {
+        if (pwm_pct > 0.0f) {
+          chauffe_on = true;
+        } else {
+          chauffe_on = false;
+        }
+      }
+      snprintf(buffer, sizeof(buffer), "Chauffage: %s %.0f%%", chauffe_on ? "ON" : "OFF", pwm_pct);
       it.print(0, 52, id(my_font), buffer);
     update_interval: 2s
 
