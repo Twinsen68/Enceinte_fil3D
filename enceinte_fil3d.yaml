@@ -249,9 +249,6 @@ display:
     model: "SSD1306_128x64"
     address: 0x3C
     id: ecran_oled
-    on_error:
-      then:
-        - logger.log: "Erreur de communication avec l'écran OLED, tentative de récupération en cours..."
     lambda: |-
       char buffer[32];
       snprintf(buffer, sizeof(buffer), "Mode: %s", id(mode_fonctionnement).state.c_str());
