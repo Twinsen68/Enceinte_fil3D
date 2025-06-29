@@ -118,7 +118,7 @@ script:
           if (id(mode_fonctionnement).state == "Off") {
             puissance = 0.0;  // Chauffage off
           } else if (id(mode_fonctionnement).state == "Maintien") {
-            if (humidite_actuelle > seuil_humidite) {
+            if (humidite_actuelle >= seuil_humidite) {
               puissance = 1.0;
             } else {
               puissance = 0.0;
@@ -126,6 +126,7 @@ script:
           } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
             puissance = 1.0;
           }
+          ESP_LOGD("gestion_chauffage", "Humidité actuelle: %.1f, Seuil cible: %.1f, Mode: %s, Puissance: %.1f", humidite_actuelle, seuil_humidite, id(mode_fonctionnement).state.c_str(), puissance);
           id(chauffage_dimmable).make_call().set_brightness(puissance).perform();
 
 font:
