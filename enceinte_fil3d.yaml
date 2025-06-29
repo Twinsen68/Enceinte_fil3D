@@ -281,7 +281,13 @@ display:
         it.print(0, 39, id(my_font), buffer);
       }
 
-      snprintf(buffer, sizeof(buffer), "T Cible: %.0f C", id(temperature_cible).state);
+      if (id(mode_fonctionnement).state == "Maintien") {
+        snprintf(buffer, sizeof(buffer), "T Cible: %.0fC H Cible: %.0f%%", id(temperature_cible).state, id(humidite_cible_maintien).state);
+      } else if (id(mode_fonctionnement).state == "Séchage approfondi") {
+        snprintf(buffer, sizeof(buffer), "T Cible: %.0fC H Cible: %.0f%%", id(temperature_cible).state, id(humidite_cible_sechage).state);
+      } else {
+        snprintf(buffer, sizeof(buffer), "T Cible: %.0f C", id(temperature_cible).state);
+      }
       it.print(0, 52, id(my_font), buffer);
 
       float pwm_pct = 0.0f;
@@ -349,8 +355,12 @@ binary_sensor:
                 ESP_LOGI("bouton_plus", "Filament changé: %s, Température cible: %.1f°C", it->c_str(), temp_cible_filament);
               }
             } else {
-              // En mode Maintien ou Séchage, bouton + incrémente humidite_cible_maintien max 50%
-              id(humidite_cible_maintien).publish_state(std::min(id(humidite_cible_maintien).state + 1, 50.0f));
+              // En mode Maintien ou Séchage, bouton + incrémente l'humidité cible correspondante (max 50%)
+              if (id(mode_fonctionnement).state == "Maintien") {
+                id(humidite_cible_maintien).publish_state(std::min(id(humidite_cible_maintien).state + 1, 50.0f));
+              } else {
+                id(humidite_cible_sechage).publish_state(std::min(id(humidite_cible_sechage).state + 1, 50.0f));
+              }
             }
         - script.execute: gestion_chauffage
         - lambda: |-
@@ -402,8 +412,12 @@ binary_sensor:
                 ESP_LOGI("bouton_moins", "Filament changé: %s, Température cible: %.1f°C", it->c_str(), temp_cible_filament);
               }
             } else {
-              // En mode Maintien ou Séchage, bouton - décrémente humidite_cible_maintien min 10%
-              id(humidite_cible_maintien).publish_state(std::max(id(humidite_cible_maintien).state - 1, 10.0f));
+              // En mode Maintien ou Séchage, bouton - décrémente l'humidité cible correspondante (min 10%)
+              if (id(mode_fonctionnement).state == "Maintien") {
+                id(humidite_cible_maintien).publish_state(std::max(id(humidite_cible_maintien).state - 1, 10.0f));
+              } else {
+                id(humidite_cible_sechage).publish_state(std::max(id(humidite_cible_sechage).state - 1, 10.0f));
+              }
             }
         - script.execute: gestion_chauffage
         - lambda: |-

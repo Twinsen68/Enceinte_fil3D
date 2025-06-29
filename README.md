@@ -60,7 +60,7 @@ L’écran affiche en permanence :
 Mode: Maintien / Séchage
 Temp: XX.X°C
 Humidité: XX.X%
-Cible: XX.X%
+T Cible: XX°C / H Cible: XX%
 
 💡 Affichage dynamique du type de filament sélectionné dans tous les modes.
 💡 En mode Off, les boutons + et - permettent de sélectionner le type de filament à l'écran directement.
