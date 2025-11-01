@@ -219,6 +219,8 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
    ```bash
    rm -rf ~/.esphome
    ```
+5. **Connecter l'ESP32 en USB** à ton Mac.
+6. **Lancer la compilation** en pointant vers le fichier `install.yaml` du dépôt cloné :
 5. **Identifier le port série de l’ESP32** (étape obligatoire avant la compilation) :
    ```bash
    ls /dev/cu.*
@@ -254,6 +256,9 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
    > esphome run install.yaml
    > ```
    > Sinon, assurez-vous de fournir le **chemin complet** vers `install.yaml` lorsque vous lancez la commande depuis un autre emplacement.
+
+   > 🔌 **Détection du port USB** : `esphome run` affiche automatiquement les cartes détectées (ex. `/dev/cu.usbserial-XXXX`).
+   > Sélectionne simplement le port proposé ou renseigne-le manuellement avec `--device /dev/ton-port` si plusieurs ESP sont branchés.
 
 > 💡 Lors de la première exécution, ESPHome vous proposera de flasher l'ESP32 connecté en USB. Les compilations suivantes pourront être envoyées via le réseau.
 
