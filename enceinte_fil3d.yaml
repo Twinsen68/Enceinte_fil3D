@@ -13,6 +13,7 @@ esphome:
             ESP_LOGW("boot", "OLED non initialisé lors du boot, update ignoré");
           }
       - lambda: |-
+          id(dernier_tick_sechage_ms) = millis();
           if (id(temps_restant_sechage_sensor) != nullptr) {
             id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
           }
@@ -35,6 +36,12 @@ ota:
 api:
   encryption:
     key: !secret encryption_key
+  on_client_connected:
+    then:
+      - lambda: |-
+          if (id(temps_restant_sechage_sensor) != nullptr) {
+            id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+          }
 logger:
   level: INFO
 
@@ -43,6 +50,18 @@ globals:
     type: int
     restore_value: no
     initial_value: '0'
+  - id: temps_fin_sechage_epoch
+    type: long
+    restore_value: no
+    initial_value: '0'
+  - id: dernier_tick_sechage_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: '0'
+
+time:
+  - platform: homeassistant
+    id: ha_time
 
 # Définition du bus I2C (utilisé pour OLED)
 i2c:
@@ -85,6 +104,7 @@ sensor:
     unit_of_measurement: "min"
     accuracy_decimals: 0
     device_class: duration
+    state_class: measurement
     force_update: true
     icon: "mdi:clock-outline"
     lambda: 'return (float) id(temps_restant_sechage);'
@@ -94,8 +114,63 @@ interval:
   - interval: 30s
     then:
       - lambda: |-
-          if (id(temps_restant_sechage_sensor) != nullptr) {
-            id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+          auto publish_remaining = [&]() {
+            if (id(temps_restant_sechage_sensor) != nullptr) {
+              id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+            }
+          };
+          if (id(mode_fonctionnement).state == "Séchage approfondi") {
+            int remaining = id(temps_restant_sechage);
+            bool updated = false;
+            auto now = id(ha_time).now();
+            if (now.is_valid() && id(temps_fin_sechage_epoch) > 0) {
+              int seconds_remaining = id(temps_fin_sechage_epoch) - now.timestamp;
+              if (seconds_remaining < 0) {
+                seconds_remaining = 0;
+              }
+              remaining = (seconds_remaining + 59) / 60;
+              updated = true;
+            } else {
+              uint32_t now_ms = millis();
+              uint32_t elapsed_ms = now_ms - id(dernier_tick_sechage_ms);
+              if (elapsed_ms >= 60000) {
+                uint32_t minutes_passed = elapsed_ms / 60000;
+                if (minutes_passed > 0) {
+                  if (minutes_passed >= static_cast<uint32_t>(remaining)) {
+                    remaining = 0;
+                  } else {
+                    remaining -= static_cast<int>(minutes_passed);
+                  }
+                  id(dernier_tick_sechage_ms) = now_ms - (elapsed_ms % 60000);
+                  updated = true;
+                }
+              }
+            }
+            if (updated) {
+              if (remaining != id(temps_restant_sechage)) {
+                id(temps_restant_sechage) = remaining;
+              }
+              publish_remaining();
+              if (id(ecran_oled) != nullptr) {
+                id(ecran_oled).update();
+              }
+            } else {
+              publish_remaining();
+            }
+            if (id(temps_restant_sechage) == 0) {
+              id(temps_fin_sechage_epoch) = 0;
+              id(dernier_tick_sechage_ms) = millis();
+              if (id(mode_fonctionnement).state == "Séchage approfondi") {
+                id(mode_fonctionnement).publish_state("Maintien");
+              }
+            }
+          } else {
+            if (id(temps_restant_sechage) != 0 || id(temps_fin_sechage_epoch) != 0) {
+              id(temps_restant_sechage) = 0;
+              id(temps_fin_sechage_epoch) = 0;
+              id(dernier_tick_sechage_ms) = millis();
+            }
+            publish_remaining();
           }
 
 output:
@@ -166,6 +241,9 @@ select:
     optimistic: true
     options: ["Off", "Maintien", "Séchage approfondi", "Test"]
     initial_option: "Off"
+    set_action:
+      - lambda: |-
+          id(mode_fonctionnement).publish_state(x);
     on_value:
       then:
         - logger.log: "Mode de fonctionnement changé à: ${id(mode_fonctionnement).state}"
@@ -178,7 +256,14 @@ select:
             else:
               - lambda: |-
                   id(temps_restant_sechage) = 0;
-                  id(temps_restant_sechage_sensor).publish_state(0);
+                  id(temps_fin_sechage_epoch) = 0;
+                  id(dernier_tick_sechage_ms) = millis();
+                  if (id(temps_restant_sechage_sensor) != nullptr) {
+                    id(temps_restant_sechage_sensor).publish_state(0);
+                  }
+                  if (id(ecran_oled) != nullptr) {
+                    id(ecran_oled).update();
+                  }
 
   - platform: template
     name: "Filament"
@@ -300,23 +385,20 @@ script:
     then:
       - lambda: |-
           id(temps_restant_sechage) = (int)(id(duree_sechage).state * 60);
-          id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
-      - while:
-          condition:
-            lambda: 'return id(temps_restant_sechage) > 0 && id(mode_fonctionnement).state == "Séchage approfondi";'
-          then:
-            - delay: 60s
-            - lambda: |-
-                id(temps_restant_sechage) -= 1;
-                id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
-                ESP_LOGD("timer_sechage", "Temps restant %d min", id(temps_restant_sechage));
-                if (id(ecran_oled) != nullptr) { id(ecran_oled).update(); }
-      - lambda: |-
-          if (id(mode_fonctionnement).state == "Séchage approfondi") {
-            id(mode_fonctionnement).publish_state("Maintien");
+          id(dernier_tick_sechage_ms) = millis();
+          auto now = id(ha_time).now();
+          if (now.is_valid()) {
+            id(temps_fin_sechage_epoch) = now.timestamp + id(temps_restant_sechage) * 60;
+          } else {
+            id(temps_fin_sechage_epoch) = 0;
           }
-          id(temps_restant_sechage) = 0;
-          id(temps_restant_sechage_sensor).publish_state(0);
+          if (id(temps_restant_sechage_sensor) != nullptr) {
+            id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+          }
+          ESP_LOGI("timer_sechage", "Cycle de séchage lancé pour %d minutes", id(temps_restant_sechage));
+          if (id(ecran_oled) != nullptr) {
+            id(ecran_oled).update();
+          }
 
 font:
   - file: "gfonts://Roboto"
@@ -556,8 +638,13 @@ binary_sensor:
               id(timer_sechage).execute();
             } else {
               id(temps_restant_sechage) = 0;
+              id(temps_fin_sechage_epoch) = 0;
+              id(dernier_tick_sechage_ms) = millis();
               if (id(temps_restant_sechage_sensor) != nullptr) {
                 id(temps_restant_sechage_sensor).publish_state(0);
+              }
+              if (id(ecran_oled) != nullptr) {
+                id(ecran_oled).update();
               }
             }
         - script.execute: gestion_chauffage
