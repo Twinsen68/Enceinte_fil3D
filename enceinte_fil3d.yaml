@@ -85,9 +85,18 @@ sensor:
     unit_of_measurement: "min"
     accuracy_decimals: 0
     device_class: duration
+    force_update: true
     icon: "mdi:clock-outline"
     lambda: 'return (float) id(temps_restant_sechage);'
     update_interval: never
+
+interval:
+  - interval: 30s
+    then:
+      - lambda: |-
+          if (id(temps_restant_sechage_sensor) != nullptr) {
+            id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+          }
 
 output:
   - platform: ledc
