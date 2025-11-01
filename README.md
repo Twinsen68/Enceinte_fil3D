@@ -181,10 +181,21 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
    ```bash
    rm -rf ~/.esphome
    ```
-5. **Lancer la compilation** en pointant vers le fichier `install.yaml` du dépôt cloné :
+5. **Connecter l'ESP32 en USB** à ton Mac.
+6. **Lancer la compilation** en pointant vers le fichier `install.yaml` du dépôt cloné :
    ```bash
    esphome run /chemin/vers/Enceinte_fil3D/install.yaml
    ```
+
+   > ℹ️ **Astuce :** si vous préférez utiliser un chemin relatif, placez-vous d'abord dans le dossier du projet :
+   > ```bash
+   > cd /chemin/vers/Enceinte_fil3D
+   > esphome run install.yaml
+   > ```
+   > Sinon, assurez-vous de fournir le **chemin complet** vers `install.yaml` lorsque vous lancez la commande depuis un autre emplacement.
+
+   > 🔌 **Détection du port USB** : `esphome run` affiche automatiquement les cartes détectées (ex. `/dev/cu.usbserial-XXXX`).
+   > Sélectionne simplement le port proposé ou renseigne-le manuellement avec `--device /dev/ton-port` si plusieurs ESP sont branchés.
 
 > 💡 Lors de la première exécution, ESPHome vous proposera de flasher l'ESP32 connecté en USB. Les compilations suivantes pourront être envoyées via le réseau.
 
