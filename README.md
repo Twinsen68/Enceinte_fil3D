@@ -186,6 +186,20 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
    esphome run /chemin/vers/Enceinte_fil3D/install.yaml
    ```
 
+   > 📌 **Syntaxe rappel** : la commande s'utilise sous la forme `esphome run <chemin_du_yaml> [--device <port>]`.
+   > Assure-toi de laisser un **espace entre `run` et le chemin** (par exemple `esphome run /Users/.../install.yaml`).
+   > Si le chemin contient des espaces, place-le entre guillemets (`"..."`).
+
+   > ℹ️ **Si plusieurs périphériques série sont présents**, précise explicitement le port USB de l'ESP32 avec l'option `--device`.
+   > Par exemple sur macOS&nbsp;:
+   > ```bash
+   > esphome run install.yaml --device /dev/cu.usbserial-1101
+   > ```
+   > et sur Linux&nbsp;:
+   > ```bash
+   > esphome run install.yaml --device /dev/ttyUSB0
+   > ```
+
    > ℹ️ **Astuce :** si vous préférez utiliser un chemin relatif, placez-vous d'abord dans le dossier du projet :
    > ```bash
    > cd /chemin/vers/Enceinte_fil3D
@@ -241,6 +255,7 @@ Ensuite, **redémarrez ESPHome et rechargez la configuration** pour que les mise
 - **Le chauffage ne s'allume pas** : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
 - **L'écran OLED n'affiche rien** : Vérifiez qu’il est bien alimenté et connecté à SDA/SCL.
 - **Le module ne se connecte pas au WiFi** : Vérifiez le SSID et le mot de passe dans ESPHome.
+- **L'upload OTA échoue avec `Connecting to ... failed: timed out`** : assurez-vous que l'ESP32 est bien connecté au même réseau, que l'adresse IP est correcte (vérifiez dans Home Assistant) et que le port 3232 n'est pas bloqué par un pare-feu. N'hésitez pas à lancer `ping 192.168.1.100` pour confirmer l'accessibilité ou à reflasher une première fois via USB si l'appareil ne répond plus.
 
 ---
 
