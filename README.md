@@ -8,6 +8,7 @@ Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faibl
 - **Mode séchage approfondi** : Assèche intensément les filaments et le dessicant.
 - **Régulation intelligente de la chauffe** (PWM progressif selon l'humidité).
 - **Affichage OLED avec veille automatique** après 10 minutes d’inactivité.
+- **Temps de séchage restant visible dans Home Assistant** via un capteur dédié.
 - **Réglage de la durée du séchage approfondi** (1 à 8 heures).
 - **Contrôle via boutons physiques et Home Assistant**.
 - **Sélection du type de filament directement via les boutons physiques en mode Off ou Maintien/Séchage**
@@ -49,7 +50,8 @@ Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faibl
 - **ABS** : 65-75°C (4 heures)
 - **Nylon** : 70-80°C (4 heures)
 
-💡 **La durée est réglable de 1h à 8h via Home Assistant**.  
+💡 **La durée est réglable de 1h à 8h via Home Assistant**.
+⌛ **Un capteur `Temps restant Séchage` expose le compte à rebours en minutes dans Home Assistant** pour suivre l'avancement depuis l'interface ou des automatisations.
 ⌛ **Une fois terminé, l’enceinte repasse automatiquement en mode Maintien**.
 
 ---
@@ -128,7 +130,7 @@ ESPHome permet d’inclure la configuration directement depuis **GitHub**.
 ➡ **Copiez ce fichier dans ESPHome** :
 
 ```yaml
-esp32:  
+esp32:
   board: esp32dev  # Spécifie le modèle de la carte ESP32 (ESP32 DevKit V1 ici).
   framework:
     type: arduino  # Utilisation du framework Arduino, largement compatible avec ESPHome.
@@ -139,7 +141,7 @@ packages:  # Inclusion d'une configuration externe pour modularité et réutilis
     file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
-esphome:  
+esphome:
   name: enceinte_fil3d
   name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
   friendly_name: "Enceinte filament 3D contrôlée"
@@ -153,6 +155,25 @@ wifi:
   password: !secret wifi_password  # Mot de passe du Wi-Fi
   ```
 
+### 🔐 Où trouver et comment gérer la clé de chiffrement ESPHome ?
+
+La clé `api.encryption.key` est indispensable pour que Home Assistant puisse communiquer avec l’ESP32. Elle est déjà renseignée dans les fichiers `install.yaml` et `enceinte_fil3D.yaml` du dépôt pour vous permettre de tester rapidement le projet. Vous pouvez la retrouver à tout moment en ouvrant le fichier YAML dans ESPHome (**Configurer → Modifier**). 
+
+Pour un déploiement définitif, il est fortement conseillé de **générer votre propre clé** et de la stocker dans votre `secrets.yaml` :
+
+1. Dans ESPHome, ouvrez l’appareil, cliquez sur **Modifier**, puis dans la section `api:` remplacez la clé par `!secret esphome_encryption_key`.
+2. Dans le fichier `secrets.yaml`, ajoutez :
+   ```yaml
+   esphome_encryption_key: VOTRE_CLE_BASE64==
+   ```
+3. Pour générer une nouvelle clé depuis votre terminal, utilisez par exemple :
+   ```bash
+   openssl rand -base64 32
+   ```
+4. Rechargez la configuration ESPHome et re-flashez l’ESP32 pour appliquer la nouvelle clé.
+
+> ℹ️ Si la clé de chiffrement est modifiée, pensez à supprimer l’appareil dans Home Assistant puis à le ré-intégrer afin qu’il accepte la nouvelle clé.
+
 ## 3️⃣ Déploiement dans ESPHome
 
 1. **Ouvrez ESPHome dans Home Assistant**.
@@ -160,6 +181,23 @@ wifi:
 3. **Flashez l’ESP32 via USB** pour la première installation.
 4. **Le module se connectera au Wi-Fi et sera visible dans Home Assistant**.
 5. **Accédez aux contrôles directement depuis Home Assistant**.
+
+---
+
+### 🔐 Configuration du Wi-Fi via `secrets.yaml`
+
+Pour que l'ESP32 se connecte correctement à votre réseau, les identifiants Wi-Fi doivent être définis dans un fichier de secrets :
+
+1. **Depuis Home Assistant / ESPHome** :
+   - Ouvrez l'interface ESPHome et cliquez sur le menu "Secrets" (icône 🔑 en bas à gauche).
+   - Ajoutez les entrées suivantes en remplaçant par vos informations :
+     ```yaml
+     wifi_ssid: "NomDeVotreReseau"
+     wifi_password: "MotDePasseSuperSecret"
+     ```
+2. **En compilation locale** : créez (ou complétez) le fichier `secrets.yaml` dans le même dossier que `install.yaml` avec les mêmes clés `wifi_ssid` et `wifi_password`.
+
+⚠️ Sans ces secrets, l'appareil ne pourra pas se connecter au Wi-Fi et la compilation ESPHome échouera. Assurez-vous également que `install.yaml` référence bien ces clés (voir fichier pour les commentaires détaillés).
 
 ---
 
@@ -183,9 +221,34 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
    ```
 5. **Connecter l'ESP32 en USB** à ton Mac.
 6. **Lancer la compilation** en pointant vers le fichier `install.yaml` du dépôt cloné :
+5. **Identifier le port série de l’ESP32** (étape obligatoire avant la compilation) :
    ```bash
-   esphome run /chemin/vers/Enceinte_fil3D/install.yaml
+   ls /dev/cu.*
    ```
+   > Selon la version de macOS, `ls /dev/tty.*` peut également afficher le port. Note le nom exact (`usbserial`, `usbmodem`, `SLAB_USBtoUART`, etc.).
+
+6. **Lancer la compilation** en pointant vers `install.yaml` **et en précisant systématiquement le port détecté** :
+   ```bash
+   esphome run /chemin/vers/Enceinte_fil3D/install.yaml --device /dev/cu.usbserial-1101
+   ```
+
+   > 📌 **Syntaxe rappel** : la commande s'utilise sous la forme `esphome run <chemin_du_yaml> --device <port>`.
+   > Assure-toi de laisser un **espace entre `run` et le chemin** (par exemple `esphome run /Users/.../install.yaml`).
+   > Si le chemin contient des espaces, place-le entre guillemets (`"..."`).
+
+   > ℹ️ Sur Linux, le port se présente généralement sous la forme `/dev/ttyUSB0` ou `/dev/ttyACM0`. La commande complète devient alors par exemple :
+   > ```bash
+   > esphome run install.yaml --device /dev/ttyUSB0
+   > ```
+
+> ❗️ **Erreur "The selected serial port does not exist" sur macOS :**
+> 1. Vérifie que ton câble USB permet bien le transfert de données et que le module est alimenté.
+> 2. Réexécute `ls /dev/cu.*` (ou `ls /dev/tty.*`) pour confirmer que le port est toujours visible.
+> 3. Relance la commande `esphome run ... --device ...` avec le port listé, par exemple :
+>    ```bash
+>    esphome run install.yaml --device /dev/cu.usbserial-1420
+>    ```
+>    (le nom exact peut varier selon l'adaptateur FTDI/CP210x utilisé).
 
    > ℹ️ **Astuce :** si vous préférez utiliser un chemin relatif, placez-vous d'abord dans le dossier du projet :
    > ```bash
@@ -201,6 +264,121 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
 
 ---
 
+## 🧩 Carte Lovelace (Mushroom)
+
+Une fois l’appareil intégré à Home Assistant, vous pouvez piloter toutes ses fonctions via une carte **Mushroom** compacte. Assurez-vous d’avoir installé le thème/cartes Mushroom via HACS, puis ajoutez la carte suivante dans votre tableau de bord :
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:mushroom-chips-card
+    alignment: justify
+    chips:
+      - type: entity
+        entity: sensor.enceintefil3d_temperature
+        icon: mdi:thermometer
+        name: Temp
+      - type: entity
+        entity: sensor.enceintefil3d_humidite
+        icon: mdi:water-percent
+        name: Humidité
+      - type: template
+        icon: mdi:timer-sand
+        content: >
+          {% set reste = states('sensor.enceintefil3d_temps_restant_sechage') | int(0) %}
+          {% if reste > 0 %}
+            {{ reste }} min restants
+          {% else %}
+            Séchage en veille
+          {% endif %}
+      - type: entity
+        entity: light.enceintefil3d_chauffage_progressif
+        name: Chauffage
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: custom:mushroom-select-card
+        entity: select.enceintefil3d_mode_de_fonctionnement
+        name: Mode
+        layout: vertical
+        icon: mdi:cog-sync
+      - type: custom:mushroom-select-card
+        entity: select.enceintefil3d_filament
+        name: Filament
+        layout: vertical
+        icon: mdi:printer-3d
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_temperature_cible
+        name: T° cible
+        icon: mdi:thermometer-check
+        layout: vertical
+        display_mode: row
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_humidite_cible_maintien
+        name: Hum. maintien
+        icon: mdi:water-alert
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: Maintien
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_humidite_cible_sechage
+        name: Hum. séchage
+        icon: mdi:water-sync
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: 'Séchage approfondi'
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_duree_du_sechage
+        name: Durée (h)
+        icon: mdi:clock-outline
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: 'Séchage approfondi'
+      - type: custom:mushroom-entity-card
+        entity: sensor.enceintefil3d_temps_restant_sechage
+        name: Temps restant
+        icon: mdi:timer-sand
+        layout: vertical
+        visibility:
+          - condition: state_not
+            entity: sensor.enceintefil3d_temps_restant_sechage
+            state_not: '0'
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_puissance_test
+        name: PWM test
+        icon: mdi:flash-outline
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: Test
+      - type: custom:mushroom-entity-card
+        entity: switch.enceintefil3d_test_pwm_mosfet
+        name: MOSFET 100 %
+        icon: mdi:toggle-switch
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: light.enceintefil3d_chauffage_progressif
+        name: Chauffage progressif
+        icon: mdi:radiator
+        layout: vertical
+```
+
+Les blocs `visibility` n’affichent que les réglages pertinents selon le mode actif (Maintien, Séchage approfondi ou Test) pour conserver une interface claire et compacte, tandis que la pastille et la carte "Temps restant" se mettent automatiquement à jour pendant un cycle de séchage.
+
+---
+
 ## 🧰 Structure du dépôt
 
 - `enceinte_fil3D.yaml` : configuration principale de l'enceinte avec tout le code ESPHome.
@@ -211,6 +389,14 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
 
 ## 📝 Personnalisation de la configuration
 
+- Copie **`secrets.example.yaml`** en **`secrets.yaml`** puis remplis les valeurs `wifi_ssid`, `wifi_password` et `encryption_key`.
+  - 💡 Génère facilement une clé d'API chiffrée avec :
+    ```bash
+    python - <<'PY'
+    import secrets, base64
+    print(base64.b64encode(secrets.token_bytes(32)).decode())
+    PY
+    ```
 - Modifie **`install.yaml`** pour renseigner ton `wifi_ssid` et `wifi_password`.
 - Dans **`enceinte_fil3D.yaml`**, ajuste si besoin :
   - les valeurs d'**humidité cible** (`humidite_cible_maintien` et `humidite_cible_sechage`)
@@ -245,6 +431,7 @@ Ensuite, **redémarrez ESPHome et rechargez la configuration** pour que les mise
 - **Le chauffage ne s'allume pas** : Vérifiez si l’humidité actuelle est inférieure au seuil défini.
 - **L'écran OLED n'affiche rien** : Vérifiez qu’il est bien alimenté et connecté à SDA/SCL.
 - **Le module ne se connecte pas au WiFi** : Vérifiez le SSID et le mot de passe dans ESPHome.
+- **L'upload OTA échoue avec `Connecting to ... failed: timed out`** : assurez-vous que l'ESP32 est bien connecté au même réseau, que l'adresse IP est correcte (vérifiez dans Home Assistant) et que le port 3232 n'est pas bloqué par un pare-feu. N'hésitez pas à lancer `ping 192.168.1.100` pour confirmer l'accessibilité ou à reflasher une première fois via USB si l'appareil ne répond plus.
 
 ---
 
