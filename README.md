@@ -198,24 +198,34 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
    ```bash
    rm -rf ~/.esphome
    ```
-5. **Lancer la compilation** en pointant vers le fichier `install.yaml` du dépôt cloné :
+5. **Identifier le port série de l’ESP32** (étape obligatoire avant la compilation) :
    ```bash
-   esphome run /chemin/vers/Enceinte_fil3D/install.yaml
+   ls /dev/cu.*
+   ```
+   > Selon la version de macOS, `ls /dev/tty.*` peut également afficher le port. Note le nom exact (`usbserial`, `usbmodem`, `SLAB_USBtoUART`, etc.).
+
+6. **Lancer la compilation** en pointant vers `install.yaml` **et en précisant systématiquement le port détecté** :
+   ```bash
+   esphome run /chemin/vers/Enceinte_fil3D/install.yaml --device /dev/cu.usbserial-1101
    ```
 
-   > 📌 **Syntaxe rappel** : la commande s'utilise sous la forme `esphome run <chemin_du_yaml> [--device <port>]`.
+   > 📌 **Syntaxe rappel** : la commande s'utilise sous la forme `esphome run <chemin_du_yaml> --device <port>`.
    > Assure-toi de laisser un **espace entre `run` et le chemin** (par exemple `esphome run /Users/.../install.yaml`).
    > Si le chemin contient des espaces, place-le entre guillemets (`"..."`).
 
-   > ℹ️ **Si plusieurs périphériques série sont présents**, précise explicitement le port USB de l'ESP32 avec l'option `--device`.
-   > Par exemple sur macOS&nbsp;:
-   > ```bash
-   > esphome run install.yaml --device /dev/cu.usbserial-1101
-   > ```
-   > et sur Linux&nbsp;:
+   > ℹ️ Sur Linux, le port se présente généralement sous la forme `/dev/ttyUSB0` ou `/dev/ttyACM0`. La commande complète devient alors par exemple :
    > ```bash
    > esphome run install.yaml --device /dev/ttyUSB0
    > ```
+
+> ❗️ **Erreur "The selected serial port does not exist" sur macOS :**
+> 1. Vérifie que ton câble USB permet bien le transfert de données et que le module est alimenté.
+> 2. Réexécute `ls /dev/cu.*` (ou `ls /dev/tty.*`) pour confirmer que le port est toujours visible.
+> 3. Relance la commande `esphome run ... --device ...` avec le port listé, par exemple :
+>    ```bash
+>    esphome run install.yaml --device /dev/cu.usbserial-1420
+>    ```
+>    (le nom exact peut varier selon l'adaptateur FTDI/CP210x utilisé).
 
    > ℹ️ **Astuce :** si vous préférez utiliser un chemin relatif, placez-vous d'abord dans le dossier du projet :
    > ```bash
