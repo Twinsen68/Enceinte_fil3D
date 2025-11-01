@@ -163,6 +163,23 @@ wifi:
 
 ---
 
+### 🔐 Configuration du Wi-Fi via `secrets.yaml`
+
+Pour que l'ESP32 se connecte correctement à votre réseau, les identifiants Wi-Fi doivent être définis dans un fichier de secrets :
+
+1. **Depuis Home Assistant / ESPHome** :
+   - Ouvrez l'interface ESPHome et cliquez sur le menu "Secrets" (icône 🔑 en bas à gauche).
+   - Ajoutez les entrées suivantes en remplaçant par vos informations :
+     ```yaml
+     wifi_ssid: "NomDeVotreReseau"
+     wifi_password: "MotDePasseSuperSecret"
+     ```
+2. **En compilation locale** : créez (ou complétez) le fichier `secrets.yaml` dans le même dossier que `install.yaml` avec les mêmes clés `wifi_ssid` et `wifi_password`.
+
+⚠️ Sans ces secrets, l'appareil ne pourra pas se connecter au Wi-Fi et la compilation ESPHome échouera. Assurez-vous également que `install.yaml` référence bien ces clés (voir fichier pour les commentaires détaillés).
+
+---
+
 ### 💻 Compilation locale depuis un terminal macOS
 
 Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou mémoire insuffisante), il est possible de **générer le firmware directement depuis un Mac** en utilisant le terminal.
