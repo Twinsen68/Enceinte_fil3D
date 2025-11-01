@@ -12,6 +12,10 @@ esphome:
           } else {
             ESP_LOGW("boot", "OLED non initialisé lors du boot, update ignoré");
           }
+      - lambda: |-
+          if (id(temps_restant_sechage_sensor) != nullptr) {
+            id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+          }
 
 esp32:
   board: esp32dev
@@ -72,6 +76,16 @@ sensor:
               }
           - logger.log: "Mise à jour forcée après lecture humidité DHT."
     update_interval: 10s
+
+  - platform: template
+    name: "Temps restant Séchage"
+    id: temps_restant_sechage_sensor
+    unit_of_measurement: "min"
+    accuracy_decimals: 0
+    device_class: duration
+    icon: "mdi:clock-outline"
+    lambda: 'return (float) id(temps_restant_sechage);'
+    update_interval: never
 
 output:
   - platform: ledc
@@ -153,6 +167,7 @@ select:
             else:
               - lambda: |-
                   id(temps_restant_sechage) = 0;
+                  id(temps_restant_sechage_sensor).publish_state(0);
 
   - platform: template
     name: "Filament"
@@ -274,6 +289,7 @@ script:
     then:
       - lambda: |-
           id(temps_restant_sechage) = (int)(id(duree_sechage).state * 60);
+          id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
       - while:
           condition:
             lambda: 'return id(temps_restant_sechage) > 0 && id(mode_fonctionnement).state == "Séchage approfondi";'
@@ -281,12 +297,15 @@ script:
             - delay: 60s
             - lambda: |-
                 id(temps_restant_sechage) -= 1;
+                id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
                 ESP_LOGD("timer_sechage", "Temps restant %d min", id(temps_restant_sechage));
                 if (id(ecran_oled) != nullptr) { id(ecran_oled).update(); }
       - lambda: |-
           if (id(mode_fonctionnement).state == "Séchage approfondi") {
             id(mode_fonctionnement).publish_state("Maintien");
           }
+          id(temps_restant_sechage) = 0;
+          id(temps_restant_sechage_sensor).publish_state(0);
 
 font:
   - file: "gfonts://Roboto"

@@ -8,6 +8,7 @@ Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faibl
 - **Mode séchage approfondi** : Assèche intensément les filaments et le dessicant.
 - **Régulation intelligente de la chauffe** (PWM progressif selon l'humidité).
 - **Affichage OLED avec veille automatique** après 10 minutes d’inactivité.
+- **Temps de séchage restant visible dans Home Assistant** via un capteur dédié.
 - **Réglage de la durée du séchage approfondi** (1 à 8 heures).
 - **Contrôle via boutons physiques et Home Assistant**.
 - **Sélection du type de filament directement via les boutons physiques en mode Off ou Maintien/Séchage**
@@ -49,7 +50,8 @@ Cette enceinte de stockage pour **filaments 3D** permet de **maintenir une faibl
 - **ABS** : 65-75°C (4 heures)
 - **Nylon** : 70-80°C (4 heures)
 
-💡 **La durée est réglable de 1h à 8h via Home Assistant**.  
+💡 **La durée est réglable de 1h à 8h via Home Assistant**.
+⌛ **Un capteur `Temps restant Séchage` expose le compte à rebours en minutes dans Home Assistant** pour suivre l'avancement depuis l'interface ou des automatisations.
 ⌛ **Une fois terminé, l’enceinte repasse automatiquement en mode Maintien**.
 
 ---
@@ -259,7 +261,12 @@ cards:
       - type: template
         icon: mdi:timer-sand
         content: >
-          {{ states('sensor.enceintefil3d_humidite') }}% · {{ states('sensor.enceintefil3d_temperature') }}°C
+          {% set reste = states('sensor.enceintefil3d_temps_restant_sechage') | int(0) %}
+          {% if reste > 0 %}
+            {{ reste }} min restants
+          {% else %}
+            Séchage en veille
+          {% endif %}
       - type: entity
         entity: light.enceintefil3d_chauffage_progressif
         name: Chauffage
@@ -313,6 +320,15 @@ cards:
           - condition: state
             entity: select.enceintefil3d_mode_de_fonctionnement
             state: 'Séchage approfondi'
+      - type: custom:mushroom-entity-card
+        entity: sensor.enceintefil3d_temps_restant_sechage
+        name: Temps restant
+        icon: mdi:timer-sand
+        layout: vertical
+        visibility:
+          - condition: state_not
+            entity: sensor.enceintefil3d_temps_restant_sechage
+            state_not: '0'
       - type: custom:mushroom-number-card
         entity: number.enceintefil3d_puissance_test
         name: PWM test
@@ -335,7 +351,7 @@ cards:
         layout: vertical
 ```
 
-Les blocs `visibility` n’affichent que les réglages pertinents selon le mode actif (Maintien, Séchage approfondi ou Test) pour conserver une interface claire et compacte.
+Les blocs `visibility` n’affichent que les réglages pertinents selon le mode actif (Maintien, Séchage approfondi ou Test) pour conserver une interface claire et compacte, tandis que la pastille et la carte "Temps restant" se mettent automatiquement à jour pendant un cycle de séchage.
 
 ---
 
