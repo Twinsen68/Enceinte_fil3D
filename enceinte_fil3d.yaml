@@ -12,6 +12,10 @@ esphome:
           } else {
             ESP_LOGW("boot", "OLED non initialisé lors du boot, update ignoré");
           }
+      - lambda: |-
+          if (id(temps_restant_sechage_sensor) != nullptr) {
+            id(temps_restant_sechage_sensor).publish_state(id(temps_restant_sechage));
+          }
 
 esp32:
   board: esp32dev
@@ -78,6 +82,7 @@ sensor:
     id: temps_restant_sechage_sensor
     unit_of_measurement: "min"
     accuracy_decimals: 0
+    device_class: duration
     icon: "mdi:clock-outline"
     lambda: 'return (float) id(temps_restant_sechage);'
     update_interval: never
