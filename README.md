@@ -365,6 +365,14 @@ Les blocs `visibility` n’affichent que les réglages pertinents selon le mode 
 
 ## 📝 Personnalisation de la configuration
 
+- Copie **`secrets.example.yaml`** en **`secrets.yaml`** puis remplis les valeurs `wifi_ssid`, `wifi_password` et `encryption_key`.
+  - 💡 Génère facilement une clé d'API chiffrée avec :
+    ```bash
+    python - <<'PY'
+    import secrets, base64
+    print(base64.b64encode(secrets.token_bytes(32)).decode())
+    PY
+    ```
 - Modifie **`install.yaml`** pour renseigner ton `wifi_ssid` et `wifi_password`.
 - Dans **`enceinte_fil3D.yaml`**, ajuste si besoin :
   - les valeurs d'**humidité cible** (`humidite_cible_maintien` et `humidite_cible_sechage`)
