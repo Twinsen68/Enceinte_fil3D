@@ -128,7 +128,7 @@ ESPHome permet d’inclure la configuration directement depuis **GitHub**.
 ➡ **Copiez ce fichier dans ESPHome** :
 
 ```yaml
-esp32:  
+esp32:
   board: esp32dev  # Spécifie le modèle de la carte ESP32 (ESP32 DevKit V1 ici).
   framework:
     type: arduino  # Utilisation du framework Arduino, largement compatible avec ESPHome.
@@ -139,7 +139,7 @@ packages:  # Inclusion d'une configuration externe pour modularité et réutilis
     file: enceinte_fil3D.yaml  # Fichier YAML spécifique inclus depuis le dépôt GitHub.
     ref: v1.0.0  # Version spécifique du fichier à utiliser.
 
-esphome:  
+esphome:
   name: enceinte_fil3d
   name_add_mac_suffix: false  # Empêche l'ajout d'un suffixe MAC au nom pour éviter les doublons sur le réseau.
   friendly_name: "Enceinte filament 3D contrôlée"
@@ -152,6 +152,25 @@ wifi:
   ssid: !secret wifi_ssid  # Nom du réseau Wi-Fi
   password: !secret wifi_password  # Mot de passe du Wi-Fi
   ```
+
+### 🔐 Où trouver et comment gérer la clé de chiffrement ESPHome ?
+
+La clé `api.encryption.key` est indispensable pour que Home Assistant puisse communiquer avec l’ESP32. Elle est déjà renseignée dans les fichiers `install.yaml` et `enceinte_fil3D.yaml` du dépôt pour vous permettre de tester rapidement le projet. Vous pouvez la retrouver à tout moment en ouvrant le fichier YAML dans ESPHome (**Configurer → Modifier**). 
+
+Pour un déploiement définitif, il est fortement conseillé de **générer votre propre clé** et de la stocker dans votre `secrets.yaml` :
+
+1. Dans ESPHome, ouvrez l’appareil, cliquez sur **Modifier**, puis dans la section `api:` remplacez la clé par `!secret esphome_encryption_key`.
+2. Dans le fichier `secrets.yaml`, ajoutez :
+   ```yaml
+   esphome_encryption_key: VOTRE_CLE_BASE64==
+   ```
+3. Pour générer une nouvelle clé depuis votre terminal, utilisez par exemple :
+   ```bash
+   openssl rand -base64 32
+   ```
+4. Rechargez la configuration ESPHome et re-flashez l’ESP32 pour appliquer la nouvelle clé.
+
+> ℹ️ Si la clé de chiffrement est modifiée, pensez à supprimer l’appareil dans Home Assistant puis à le ré-intégrer afin qu’il accepte la nouvelle clé.
 
 ## 3️⃣ Déploiement dans ESPHome
 
