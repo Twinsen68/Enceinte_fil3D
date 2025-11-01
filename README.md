@@ -238,6 +238,107 @@ Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou
 
 ---
 
+## 🧩 Carte Lovelace (Mushroom)
+
+Une fois l’appareil intégré à Home Assistant, vous pouvez piloter toutes ses fonctions via une carte **Mushroom** compacte. Assurez-vous d’avoir installé le thème/cartes Mushroom via HACS, puis ajoutez la carte suivante dans votre tableau de bord :
+
+```yaml
+type: vertical-stack
+cards:
+  - type: custom:mushroom-chips-card
+    alignment: justify
+    chips:
+      - type: entity
+        entity: sensor.enceintefil3d_temperature
+        icon: mdi:thermometer
+        name: Temp
+      - type: entity
+        entity: sensor.enceintefil3d_humidite
+        icon: mdi:water-percent
+        name: Humidité
+      - type: template
+        icon: mdi:timer-sand
+        content: >
+          {{ states('sensor.enceintefil3d_humidite') }}% · {{ states('sensor.enceintefil3d_temperature') }}°C
+      - type: entity
+        entity: light.enceintefil3d_chauffage_progressif
+        name: Chauffage
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: custom:mushroom-select-card
+        entity: select.enceintefil3d_mode_de_fonctionnement
+        name: Mode
+        layout: vertical
+        icon: mdi:cog-sync
+      - type: custom:mushroom-select-card
+        entity: select.enceintefil3d_filament
+        name: Filament
+        layout: vertical
+        icon: mdi:printer-3d
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_temperature_cible
+        name: T° cible
+        icon: mdi:thermometer-check
+        layout: vertical
+        display_mode: row
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_humidite_cible_maintien
+        name: Hum. maintien
+        icon: mdi:water-alert
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: Maintien
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_humidite_cible_sechage
+        name: Hum. séchage
+        icon: mdi:water-sync
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: 'Séchage approfondi'
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_duree_du_sechage
+        name: Durée (h)
+        icon: mdi:clock-outline
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: 'Séchage approfondi'
+      - type: custom:mushroom-number-card
+        entity: number.enceintefil3d_puissance_test
+        name: PWM test
+        icon: mdi:flash-outline
+        layout: vertical
+        display_mode: row
+        visibility:
+          - condition: state
+            entity: select.enceintefil3d_mode_de_fonctionnement
+            state: Test
+      - type: custom:mushroom-entity-card
+        entity: switch.enceintefil3d_test_pwm_mosfet
+        name: MOSFET 100 %
+        icon: mdi:toggle-switch
+        layout: vertical
+      - type: custom:mushroom-entity-card
+        entity: light.enceintefil3d_chauffage_progressif
+        name: Chauffage progressif
+        icon: mdi:radiator
+        layout: vertical
+```
+
+Les blocs `visibility` n’affichent que les réglages pertinents selon le mode actif (Maintien, Séchage approfondi ou Test) pour conserver une interface claire et compacte.
+
+---
+
 ## 🧰 Structure du dépôt
 
 - `enceinte_fil3D.yaml` : configuration principale de l'enceinte avec tout le code ESPHome.
