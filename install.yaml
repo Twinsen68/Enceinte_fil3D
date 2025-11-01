@@ -18,7 +18,7 @@ esphome:  # Configuration générale d'ESPHome pour cet appareil.
 
 api:  # Active l’API ESPHome pour la communication avec Home Assistant.
   encryption:
-    key: tsHqLo48mLGhWo/qQQrZUFdsEwuZcC1/BlUOXWExy14=  # Clé de chiffrement pour sécuriser les échanges.
+    key: !secret encryption_key  # Clé de chiffrement pour sécuriser les échanges.
 
 wifi:  # Configuration du réseau Wi-Fi pour connecter l’ESP32.
   ssid: !secret wifi_ssid  # Renseignez ces valeurs dans votre fichier secrets.yaml.
