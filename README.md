@@ -203,6 +203,72 @@ Pour que l'ESP32 se connecte correctement à votre réseau, les identifiants Wi-
 
 ### 💻 Compilation locale depuis un terminal macOS
 
+Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou mémoire insuffisante), vous pouvez **générer le firmware directement depuis un Mac**. Les étapes ci-dessous détaillent chaque action pour qu’aucune commande ne soit obscure.
+
+#### 🪟 Étape 1 – Ouvrir l’application Terminal
+
+1. Cliquez sur la loupe **Spotlight** (ou appuyez sur `⌘ + Espace`).
+2. Tapez `Terminal`, puis appuyez sur **Entrée** pour lancer l’application.
+
+#### 📁 Étape 2 – Se placer dans le dossier du projet
+
+1. Dans le Terminal, tapez **exactement** `cd ` (avec un espace à la fin).
+2. Glissez-déposez le dossier `Enceinte_fil3D` dans la fenêtre **ou** tapez le chemin complet après `cd ` (ex. `cd ~/Documents/GitHub/Twinsen68/Enceinte_fil3D`, où `~` représente votre dossier personnel).
+3. Vérifiez que la ligne affichée commence bien par `cd` avant d’appuyer sur **Entrée** ; sans ce préfixe, macOS tentera d’exécuter le chemin comme un programme et affichera `permission denied`.
+4. Appuyez sur **Entrée**. La ligne de commande doit maintenant afficher quelque chose comme :
+   ```bash
+   user@mac Enceinte_fil3D %
+   ```
+
+> ℹ️ Si vous avez téléchargé le projet depuis GitHub, il se trouve généralement dans `Téléchargements` : vous pouvez aussi taper `cd ~/Téléchargements/Enceinte_fil3D` puis Entrée.
+
+#### 🐍 Étape 3 – Créer et activer l’environnement Python
+
+Les commandes suivantes se tapent **l’une après l’autre**, chacune suivie d’un appui sur **Entrée** :
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+- La première commande prépare un dossier `venv` qui contient tout ce qu’il faut pour ESPHome.
+- La deuxième commande active cet environnement : la ligne de commande doit désormais commencer par `(venv)` pour indiquer que tout est prêt.
+
+> 💡 Si vous voyez une erreur disant que Python n’est pas trouvé, installez la dernière version depuis [python.org](https://www.python.org/downloads/), puis recommencez cette étape.
+
+#### 📦 Étape 4 – Installer ESPHome dans cet environnement
+
+Tapez la commande suivante puis appuyez sur **Entrée** :
+
+```bash
+pip install --upgrade pip esphome
+```
+
+Le téléchargement peut prendre quelques minutes selon la connexion Internet.
+
+#### ♻️ Étape 5 – (Optionnel) Vider le cache ESPHome
+
+Si vous avez déjà compilé d’anciennes versions et que vous rencontrez des erreurs, tapez :
+
+```bash
+rm -rf ~/.esphome
+```
+
+Cela supprimera les fichiers temporaires pour repartir d’une base saine.
+
+#### 🚀 Étape 6 – Lancer la compilation
+
+1. Assurez-vous d’être toujours dans le dossier `Enceinte_fil3D` (la ligne de commande doit l’indiquer).
+2. Tapez ensuite :
+
+   ```bash
+   esphome run install.yaml
+   ```
+
+- Si le fichier se trouve ailleurs, remplacez `install.yaml` par le **chemin complet** vers ce fichier (ex. `esphome run ~/Documents/Enceinte_fil3D/install.yaml`).
+- Lors de la **première compilation**, ESPHome vous proposera automatiquement de flasher l’ESP32 connecté en USB. Les compilations suivantes pourront être envoyées directement via le réseau Wi-Fi.
+
+> ✅ Pour quitter plus tard l’environnement virtuel, tapez simplement `deactivate` puis appuyez sur **Entrée**.
 Si Home Assistant n'arrive pas à compiler le projet (fichier trop volumineux ou mémoire insuffisante), il est possible de **générer le firmware directement depuis un Mac** en utilisant le terminal.
 
 1. **Installer/Mettre à jour Python** : macOS dispose déjà de Python 3, mais vous pouvez installer la dernière version depuis [python.org](https://www.python.org/downloads/).
